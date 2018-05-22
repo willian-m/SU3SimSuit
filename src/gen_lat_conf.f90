@@ -54,6 +54,8 @@ call zigset(clock)
 !call random_seed(size=2,put=seed)
 call random_seed()
 
+print*, "Lattice size: ",nx,"x",ny,"x",nz,"x",nt
+print*, "Beta:", beta
 
 !Initialize the lattice according to user request
 call init_lattice(lattice_file)
@@ -61,9 +63,6 @@ do n=1,nmc
    call heat_bath_method
 end do
 
-
-print*, "Lattice size: ",nx,"x",ny,"x",nz,"x",nt
-print*, "Beta:", beta
 !==================================================================================
 contains !REMEMBER: Make sure var names declared on the functions and 
          !subroutines are local, even if they match the name of var of
