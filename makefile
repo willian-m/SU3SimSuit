@@ -30,8 +30,8 @@ MKL_LINK=-L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_rt -lpthread -lm -ldl
 FFLAGS=-ffree-line-length-none
 endif
 
-all: gen_lat_conf.run tmunu_corr.run FFT_Tmunu.run stat_avrg_cmplx.run stat_avrg_dble.run orb_avrg_cmplx.run orb_avrg_dble.run tmunu.run action.run
-
+all: gen_lat_conf.run
+ 
 action.run: dir $(SRC)/action.f90
 	$(FC) $(FFLAGS) -I$(BIN) $(OBJ_TENSOR) $(SRC)/action.f90 -o $(BIN)/$@
 
