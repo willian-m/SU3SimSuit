@@ -5,6 +5,7 @@
 module lattice
 use types_params
 use math, only : gen_su3_element,SU3_dagger
+use IO, only : read_lattice
 implicit none
 
 !==============================
@@ -48,7 +49,7 @@ subroutine init_lattice(lattice_file)
          call init_cold
       end if
    else
-      call load_lattice(lattice_file)
+      call read_lattice(lattice_file)
    end if
 end subroutine init_lattice
 !==============================
@@ -80,15 +81,6 @@ subroutine init_cold
       end do
    end do
 end subroutine
-!==============================
-
-!==============================
-!Load lattice from files
-subroutine load_lattice(lattice_file)
-character(len=1024), intent(in) :: lattice_file
-print *, "I did not implemented yet the lattice loading! Aborting now!"
-stop 0
-end subroutine load_lattice
 !==============================
 
 !==============================

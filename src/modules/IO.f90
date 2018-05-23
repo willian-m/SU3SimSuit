@@ -28,7 +28,7 @@ use types_params
 implicit none
 
 private
-public write_lattice
+public write_lattice,read_lattice
 contains
       
 subroutine write_lattice(sweepNum)
