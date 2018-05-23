@@ -1,7 +1,7 @@
 BIN=bin
 SRC=src
 MODULES=$(SRC)/modules
-OBJ_LAT_CONF= $(BIN)/ziggurat.o $(BIN)/types_params.o $(BIN)/math.o $(BIN)/lattice.o $(BIN)/objects.o $(BIN)/heat_bath.o
+OBJ_LAT_CONF= $(BIN)/ziggurat.o $(BIN)/types_params.o $(BIN)/math.o $(BIN)/lattice.o $(BIN)/objects.o $(BIN)/heat_bath.o $(BIN)/IO.o
 FC=gfortran
 
 MODE=D
@@ -31,7 +31,8 @@ FFLAGS=-ffree-line-length-none
 endif
 
 all: gen_lat_conf.run
- 
+#tmunu_corr.run FFT_Tmunu.run stat_avrg_cmplx.run stat_avrg_dble.run orb_avrg_cmplx.run orb_avrg_dble.run tmunu.run action.run
+
 action.run: dir $(SRC)/action.f90
 	$(FC) $(FFLAGS) -I$(BIN) $(OBJ_TENSOR) $(SRC)/action.f90 -o $(BIN)/$@
 

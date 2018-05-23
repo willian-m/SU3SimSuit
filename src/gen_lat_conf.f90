@@ -27,6 +27,7 @@ use types_params
 use ziggurat, only : zigset
 use lattice, only : hot_start,lattice_file,init_lattice
 use heat_bath, only : heat_bath_method
+use IO, only : write_lattice
 !==============================
 
 implicit none
@@ -62,6 +63,9 @@ call init_lattice(lattice_file)
 do n=1,nmc
    call heat_bath_method
    print *, dble(n)*100.0_dp/nmc, "% completed."
+   if (mod(nmc,n) .eq. 0) then
+      call write_lattice(n)
+   end if
 end do
 
 !==================================================================================
