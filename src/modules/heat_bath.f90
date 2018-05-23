@@ -40,7 +40,7 @@ subroutine heat_bath_method
 integer :: d,i
 
 do i=0,nx*ny*nz*nt-1
-   do d=1,4
+   do d=2,8,2
       call heat_bath_hit(d,i)
    end do
 end do
@@ -77,7 +77,7 @@ V%a = Rw%a/det
    !Creutz book 'Quarks, gluons and lattices'. GL method is found in
    !Gattringer & Lang book 'Quantum Chromodynamics on the Lattice'.
    !Use one method or another.
-X%a(4) = random_a4_GL(det)
+call random_a4_GL(det,X%a(4))
 !X%a(4) = random_a4_Creutz(det)
    !Now that we have a(4), we pick the other three by randomly picking a vector
    !On the surface of an sphere of radius sqrt(1-a(4)**2)
@@ -102,7 +102,7 @@ call SU3mult(Aux,staple,W)
 call subgroupS(W,Rw)
 det = detSU2_like(Rw)
 V%a = Rw%a/det
-X%a(4) = random_a4_GL(det)
+call random_a4_GL(det,X%a(4))
 V%a(1:3) = -V%a(1:3)
 call SU2mult(X,V,Rw)
 call embedS(Rw,R)
@@ -113,7 +113,7 @@ call SU3mult(U(d,y),staple,W)
 call subgroupT(W,Rw)
 det = detSU2_like(Rw)
 V%a = Rw%a/det
-X%a(4) = random_a4_GL(det)
+call random_a4_GL(det,X%a(4))
 V%a(1:3) = -V%a(1:3)
 call SU2mult(X,V,Rw)
 call embedS(Rw,R)
@@ -148,26 +148,22 @@ end function random_a4_Creutz
 
 !==============================
 !Randomly pick a(4) following the right distribution - GL method
-real(dp) function random_a4_GL(det)
+subroutine random_a4_GL(det,a4)
 real(dp), intent(in) :: det
+real(dp), intent(inout) :: a4
 real(dp) :: r(4), lambda2
 integer :: i
-logical :: accepted
 
-accepted = .false.
-do while (.not. accepted)
-   call random_number(r)
-   do i=1,3
-      r(i) = 1-r(i)
-   end do
-   lambda2 = (dlog(r(1)) + dlog(r(3))*(dcos(two_pi*r(2)))**2)/det/beta
-   if ( r(4)**2 .le. 1.0_dp - lambda2) then
-      accepted = .true.
-   end if
+call random_number(r)
+do i=1,3
+   r(i) = 1-r(i)
 end do
+lambda2 = -(dlog(r(1)) + dlog(r(3))*(dcos(two_pi*r(2)))**2)/det/beta/2.0_dp
+if ( r(4)**2 .le. 1.0_dp - lambda2) then
+   a4 = 1.0_dp - lambda2*2.0_dp
+end if
 
-random_a4_GL = 1.0_dp - lambda2*2.0_dp
-end function random_a4_GL
+end subroutine random_a4_GL
 !==============================
 
 !==============================
