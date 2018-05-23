@@ -1,0 +1,19 @@
+#Binary data can be safely ignored
+*.dat 
+
+#Compiled code will be ignored as well
+*.o
+*.run
+*.mod
+
+#Old code is put in Old folder and will be ignored
+Old/*
+
+#tmp files to be ignored
+*.swp
+
+#Ignores output folder, which is typically HUGE (can be several GB)
+output/*
+
+#Ignores pdfs
+*.pdf
