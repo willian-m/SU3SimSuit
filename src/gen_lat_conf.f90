@@ -63,7 +63,7 @@ call init_lattice(lattice_file)
 do n=1,nmc
    call heat_bath_method
    print *, dble(n)*100.0_dp/nmc, "% completed."
-   if (mod(nmc,n) .eq. 0) then
+   if (mod(n,rec_step) .eq. 0) then
       call write_lattice(n)
    end if
 end do
