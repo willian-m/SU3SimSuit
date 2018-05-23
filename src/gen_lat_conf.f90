@@ -61,6 +61,7 @@ print*, "Beta:", beta
 call init_lattice(lattice_file)
 do n=1,nmc
    call heat_bath_method
+   print *, dble(n)*100.0_dp/nmc, "% completed."
 end do
 
 !==================================================================================
