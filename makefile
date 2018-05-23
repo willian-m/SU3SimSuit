@@ -1,7 +1,6 @@
 BIN=bin
 SRC=src
 MODULES=$(SRC)/modules
-OBJ_LAT_CONF= $(BIN)/ziggurat.o $(BIN)/types_params.o $(BIN)/math.o $(BIN)/lattice.o $(BIN)/objects.o $(BIN)/heat_bath.o $(BIN)/IO.o
 FC=gfortran
 
 MODE=D
@@ -30,11 +29,16 @@ MKL_LINK=-L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_rt -lpthread -lm -ldl
 FFLAGS=-ffree-line-length-none
 endif
 
-all: gen_lat_conf.run
-#tmunu_corr.run FFT_Tmunu.run stat_avrg_cmplx.run stat_avrg_dble.run orb_avrg_cmplx.run orb_avrg_dble.run tmunu.run action.run
+all: gen_lat_conf.run avrg_plaquette.run
 
-action.run: dir $(SRC)/action.f90
-	$(FC) $(FFLAGS) -I$(BIN) $(OBJ_TENSOR) $(SRC)/action.f90 -o $(BIN)/$@
+
+OBJ_LAT_CONF=$(BIN)/ziggurat.o $(BIN)/types_params.o $(BIN)/math.o $(BIN)/IO.o $(BIN)/lattice.o $(BIN)/objects.o $(BIN)/heat_bath.o
+gen_lat_conf.run: dir $(OBJ_LAT_CONF) $(SRC)/gen_lat_conf.f90
+	$(FC) $(FFLAGS) -I$(BIN) $(OBJ_LAT_CONF) $(SRC)/gen_lat_conf.f90 -o $(BIN)/$@
+
+OBJ_AVRG_PLAQUETTE=$(BIN)/types_params.o $(BIN)/ziggurat.o $(BIN)/math.o $(BIN)/IO.o $(BIN)/lattice.o $(BIN)/objects.o
+avrg_plaquette.run: dir $(OBJ_AVRG_PLAQUETTE) $(SRC)/avrg_plaquette.f90
+	$(FC) $(FFLAGS) -I$(BIN) $(OBJ_AVRG_PLAQUETTE) $(SRC)/avrg_plaquette.f90 -o $(BIN)/$@
 
 tmunu.run: dir $(SRC)/tmunu.f90
 	$(FC) $(FFLAGS) -I$(BIN) $(OBJ_TENSOR) $(SRC)/tmunu.f90 -o $(BIN)/$@
@@ -53,9 +57,6 @@ stat_avrg_dble.run: dir $(SRC)/stat_avrg_dble.f90
 
 FFT_Tmunu.run: dir $(SRC)/FFT_Tmunu.f90
 	$(FC) -I${MKLROOT}/include  $(FFLAGS) $(SRC)/FFT_Tmunu.f90 $(MKL_LINK) -o $(BIN)/$@
-
-gen_lat_conf.run: dir $(OBJ_LAT_CONF) $(SRC)/gen_lat_conf.f90
-	$(FC) $(FFLAGS) -I$(BIN) $(OBJ_LAT_CONF) $(SRC)/gen_lat_conf.f90 -o $(BIN)/$@
 
 tmunu_corr.run: dir $(OBJ_TENSOR) $(SRC)/tmunu_corr.f90
 	$(FC) $(FFLAGS) -I$(BIN) $(OBJ_TENSOR) $(SRC)/tmunu_corr.f90 -o $(BIN)/$@

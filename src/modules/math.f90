@@ -29,7 +29,7 @@ implicit none
 !==============================
 
 private
-public gen_su3_element,SU3mult,SU2mult,detSU2_like,SU3_dagger
+public gen_su3_element,SU3mult,SU2mult,detSU2_like,SU3_dagger,SU3_ReTr
 public embedR,embedS,embedT,subgroupR,subgroupS,subgroupT
 contains
 
@@ -283,4 +283,15 @@ U3%a(3) = U1%a(4) * U2%a(3) + U1%a(3) * U2%a(4) - U1%a(1) * U2%a(2) + U1%a(2) * 
 end subroutine SU2mult
 !==============================
 
+!==============================
+!Takes the real part of the trace of a SU(3) matrix
+real(dp) function SU3_ReTr(V)
+type(SU3), intent(in) :: V
+integer :: i
+SU3_ReTr = 0.0_dp
+do i=1,3
+   SU3_ReTr = SU3_ReTr + V%re(i,i)
+end do
+end function SU3_ReTr
+!==============================
 end module math
