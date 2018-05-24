@@ -17,3 +17,8 @@ output/*
 
 #Ignores pdfs
 *.pdf
+
+#I use Visual Studio to debug. We exclude machine specific files from monitoring.
+#as well as builds
+**/.vs/*
+vs_project_files/**/x64/*
