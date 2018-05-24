@@ -101,9 +101,9 @@ contains !REMEMBER: Make sure var names declared on the functions and
       call GET_COMMAND_ARGUMENT(2,arg_ny)
       call GET_COMMAND_ARGUMENT(3,arg_nz)
       call GET_COMMAND_ARGUMENT(4,arg_nt)
+      call GET_COMMAND_ARGUMENT(5,arg_beta)
       call GET_COMMAND_ARGUMENT(6,arg_hot_start)
       call GET_COMMAND_ARGUMENT(7,arg_nmc)
-      call GET_COMMAND_ARGUMENT(5,arg_beta)
       call GET_COMMAND_ARGUMENT(8,arg_rec_step)
       call GET_COMMAND_ARGUMENT(9,lattice_file)
       read(arg_nx,*) nx

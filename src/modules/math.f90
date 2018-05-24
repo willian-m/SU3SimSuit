@@ -69,7 +69,7 @@ V%a(1) = rnor( )
 V%a(2) = rnor( )
 V%a(3) = rnor( )
 V%a(4) = rnor( )
-Norm = dsqrt(V%a(1)**2.d0+V%a(2)**2.d0+V%a(3)**2.d0+V%a(4)**2.d0)
+Norm = dsqrt(V%a(1)**2+V%a(2)**2+V%a(3)**2+V%a(4)**2)
 V%a(1) = V%a(1)/Norm
 V%a(2) = V%a(2)/Norm
 V%a(3) = V%a(3)/Norm
@@ -91,7 +91,7 @@ C%re = C%re - aux
 
 C%im = matmul(A%im,B%re)
 aux  = matmul(A%re,B%im)
-C%im = C%im - aux
+C%im = C%im + aux
 end subroutine SU3mult
 !==============================
 
