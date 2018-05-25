@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VisualStudioUserFile ProjectCreator="Intel Fortran" Keyword="Console Application" Version="11.0" ProjectIdGuid="{81A92F0D-D3E3-4DE1-9102-AEBDBB64EACD}">
+	<Configurations>
+		<Configuration Name="Debug|Win32" CommandArguments="4 4 $(SolutionDir)../output/lat_conf/links004004004004beta5.60Sweep000000511.dat"/>
+		<Configuration Name="Release|Win32"/>
+		<Configuration Name="Debug|x64" CommandArguments="4 4 4 4 $(SolutionDir)../output/lat_conf/links004004004004beta5.60Sweep000000511.dat"/>
+		<Configuration Name="Release|x64"/></Configurations></VisualStudioUserFile>
