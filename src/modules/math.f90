@@ -122,9 +122,9 @@ type(SU3), intent(in) :: U
 type(SU2), intent(out) :: R
 
 R%a(4) = U%re(1,1) + U%re(2,2)
-R%a(1) = -(U%im(2,1) + U%im(1,2)
-R%a(3) = -(U%im(1,1) - U%im(2,2)
-R%a(2) = -(U%re(1,2) - U%re(2,1)
+R%a(1) = -(U%im(2,1) + U%im(1,2))
+R%a(3) = -(U%im(1,1) - U%im(2,2))
+R%a(2) = -(U%re(1,2) - U%re(2,1))
 
 end subroutine subgroupR
 !==============================
@@ -152,9 +152,9 @@ type(SU3), intent(in) :: U
 type(SU2), intent(out) :: T
 
 T%a(4) = U%re(2,2) + U%re(3,3)
-T%a(1) = -(U%im(3,2) + U%im(2,3)
-T%a(3) = -(U%im(2,2) - U%im(3,3)
-T%a(2) = -(U%re(2,3) - U%re(3,2)
+T%a(1) = -(U%im(3,2) + U%im(2,3))
+T%a(3) = -(U%im(2,2) - U%im(3,3))
+T%a(2) = -(U%re(2,3) - U%re(3,2))
 
 end subroutine subgroupT
 !==============================
