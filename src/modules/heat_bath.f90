@@ -67,7 +67,7 @@ call SU3mult(U(d,y),staple,W)
 call subgroupR(W,Rw)
 
 !4)Projects Rw in the SU(2)
-det = detSU2_like(Rw)
+det = dsqrt(detSU2_like(Rw))
 V%a = Rw%a/det
 
 !5)Select a new random SU(2) element X following Boltzmann distribution
@@ -100,7 +100,7 @@ call SU3mult(R,U(d,y),Aux)
 !For subgroup S
 call SU3mult(Aux,staple,W)
 call subgroupS(W,Rw)
-det = detSU2_like(Rw)
+det = dsqrt(detSU2_like(Rw))
 V%a = Rw%a/det
 call random_a4_GL(det,X%a(4))
 V%a(1:3) = -V%a(1:3)
@@ -111,7 +111,7 @@ call SU3mult(R,Aux,U(d,y))
 !For subgroup T
 call SU3mult(U(d,y),staple,W)
 call subgroupT(W,Rw)
-det = detSU2_like(Rw)
+det = dsqrt(detSU2_like(Rw))
 V%a = Rw%a/det
 call random_a4_GL(det,X%a(4))
 V%a(1:3) = -V%a(1:3)
