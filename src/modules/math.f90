@@ -31,6 +31,7 @@ implicit none
 private
 public gen_su3_element,SU3mult,SU2mult,detSU2_like,SU3_dagger,SU3_ReTr
 public embedR,embedS,embedT,subgroupR,subgroupS,subgroupT
+!public SU3check !Used for debug. If not debugging, comment this line
 contains
 
 !==============================
@@ -92,6 +93,7 @@ C%re = C%re - aux
 C%im = matmul(A%im,B%re)
 aux  = matmul(A%re,B%im)
 C%im = C%im + aux
+
 end subroutine SU3mult
 !==============================
 
@@ -119,10 +121,10 @@ subroutine subgroupR(U,R)
 type(SU3), intent(in) :: U
 type(SU2), intent(out) :: R
 
-R%a(4) = (U%re(1,1) + U%re(2,2))*5.e-1_dp
-R%a(1) = (U%im(2,1) + U%im(1,2))*5.e-1_dp
-R%a(3) = (U%im(1,1) - U%im(2,2))*5.e-1_dp
-R%a(2) = (U%re(1,2) - U%re(2,1))*5.e-1_dp
+R%a(4) = U%re(1,1) + U%re(2,2)
+R%a(1) = -(U%im(2,1) + U%im(1,2)
+R%a(3) = -(U%im(1,1) - U%im(2,2)
+R%a(2) = -(U%re(1,2) - U%re(2,1)
 
 end subroutine subgroupR
 !==============================
@@ -134,10 +136,10 @@ subroutine subgroupS(U,S)
 type(SU3), intent(in) :: U
 type(SU2), intent(out) :: S
 
-S%a(4) = (U%re(1,1) + U%re(3,3))*5.e-1_dp
-S%a(1) = (U%im(3,1) + U%im(1,3))*5.e-1_dp
-S%a(3) = (U%im(1,1) - U%im(3,3))*5.e-1_dp
-S%a(2) = (U%re(1,3) - U%re(3,1))*5.e-1_dp
+S%a(4) = U%re(1,1) + U%re(3,3)
+S%a(1) = -(U%im(3,1) + U%im(1,3))
+S%a(3) = -(U%im(1,1) - U%im(3,3))
+S%a(2) = -(U%re(1,3) - U%re(3,1))
 
 end subroutine subgroupS
 !==============================
@@ -149,10 +151,10 @@ subroutine subgroupT(U,T)
 type(SU3), intent(in) :: U
 type(SU2), intent(out) :: T
 
-T%a(4) = (U%re(2,2) + U%re(3,3))*5.e-1_dp
-T%a(1) = (U%im(3,2) + U%im(2,3))*5.e-1_dp
-T%a(3) = (U%im(2,2) - U%im(3,3))*5.e-1_dp
-T%a(2) = (U%re(2,3) - U%re(3,2))*5.e-1_dp
+T%a(4) = U%re(2,2) + U%re(3,3)
+T%a(1) = -(U%im(3,2) + U%im(2,3)
+T%a(3) = -(U%im(2,2) - U%im(3,3)
+T%a(2) = -(U%re(2,3) - U%re(3,2)
 
 end subroutine subgroupT
 !==============================
@@ -262,7 +264,7 @@ real(dp) function detSU2_like(U)
 type(SU2), intent(in) :: U
 integer :: i
 
-detSU2_like = 0
+detSU2_like = 0.0_dp
 do i=1,4
    detSU2_like = detSU2_like + U%a(i)**2
 end do
@@ -293,5 +295,95 @@ do i=1,3
    SU3_ReTr = SU3_ReTr + V%re(i,i)
 end do
 end function SU3_ReTr
+!==============================
+
+!==============================
+!Checks if the input has the properties of a SU(3) matrix
+!Created for debug purposes
+subroutine SU3check(A)
+type(SU3), intent(in) :: A
+type(SU3) :: A_dagger,unity
+integer :: i,j,k,l
+
+!Check 1: Multiplying by its dagger should result in unity
+call SU3_dagger(A,A_dagger)
+call SU3mult(A,A_dagger,unity)
+
+do i=1,3
+   do j=1,3
+      if ( dabs(unity%im(i,j)) .gt. 1.0e-14_dp ) then
+            print *, "Warning: I generated a non-SU(3) element!"
+            print *, "Here is the real part of the offending matrix:"
+            do k=1,3
+               write(6,*) (A%re(l,k),l=1,3)
+            end do
+            print *, "Here is the imaginary part of the offending matrix:"
+            do k=1,3
+               write(6,*) (A%im(l,k),l=1,3)
+            end do
+            print *, "This matrix is not SU(3) because V . V^\dagger is:"
+            print *, "Real part:"
+            do k=1,3
+               write(6,*) (unity%re(l,k),l=1,3)
+            end do
+            print *, "Imaginary part:"
+            do k=1,3
+               write(6,*) (unity%im(l,k),l=1,3)
+            end do
+            print *, "Stopping now"
+            stop(1)
+      end if
+      if ( i .ne. j ) then
+         if ( dabs(unity%re(i,j)) .gt. 1.0e-14_dp ) then
+            print *, "Warning: I generated a non-SU(3) element!"
+            print *, "Here is the real part of the offending matrix:"
+            do k=1,3
+               write(6,*) (A%re(l,k),l=1,3)
+            end do
+            print *, "Here is the imaginary part of the offending matrix:"
+            do k=1,3
+               write(6,*) (A%im(l,k),l=1,3)
+            end do
+            print *, "This matrix is not SU(3) because V . V^\dagger is:"
+            print *, "Real part:"
+            do k=1,3
+               write(6,*) (unity%re(l,k),l=1,3)
+            end do
+            print *, "Imaginary part:"
+            do k=1,3
+               write(6,*) (unity%im(l,k),l=1,3)
+            end do
+            print *, "Stopping now"
+            stop(1)
+         end if
+      else
+         if ( dabs(unity%re(i,j) - 1.0_dp ) .gt. 1.0e-14_dp ) then
+            print *, "Warning: I generated a non-SU(3) element!"
+            print *, "Here is the real part of the offending matrix:"
+            do k=1,3
+               write(6,*) (A%re(l,k),l=1,3)
+            end do
+            print *, "Here is the imaginary part of the offending matrix:"
+            do k=1,3
+               write(6,*) (A%im(l,k),l=1,3)
+            end do
+            print *, "This matrix is not SU(3) because V . V^\dagger is:"
+            print *, "Real part:"
+            do k=1,3
+               write(6,*) (unity%re(l,k),l=1,3)
+            end do
+            print *, "Imaginary part:"
+            do k=1,3
+               write(6,*) (unity%im(l,k),l=1,3)
+            end do
+            print *, "Stopping now"
+            stop(1)
+         end if
+      end if
+   end do
+end do
+
+
+end subroutine
 !==============================
 end module math
