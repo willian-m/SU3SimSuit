@@ -70,6 +70,7 @@ $(BIN)/%.o: $(MODULES)/%.f90
 clean:
 	rm -f $(BIN)/*.o $(BIN)/*.mod $(BIN)/*.run
 	rmdir $(BIN)
+	rm -rf output
 
 plots: plots/Tmunu12.pdf plots/Tmunu13.pdf plots/Tmunu23.pdf plots/TmunuDiagonals.pdf
 	gnuplot plots/make_plots.plt
