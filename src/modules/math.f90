@@ -26,12 +26,22 @@ implicit none
 
 
 !Private variables
+integer :: levi_civita(3,3,3) = reshape((/0,0,0, & !i=1,j=1
+                                          0,0,1, & !i=1,j=2
+                                          0,-1,0,& !i=1,j=3
+                                          0,0,-1,& !i=2,j=1
+                                          0,0,0, & !i=2,j=2
+                                          1,0,0, & !i=2,j=3
+                                          0,1,0, & !i=3,j=1
+                                          -1,0,0, &!i=3,j=2
+                                          0,0,0/),&!i=3,j=3
+                                         (/3,3,3/),order=(/1,3,2/))
+
 !==============================
 
 private
-public gen_su3_element,SU3mult,SU2mult,detSU2_like,SU3_dagger,SU3_ReTr
-public embedR,embedS,embedT,subgroupR,subgroupS,subgroupT
-!public SU3check !Used for debug. If not debugging, comment this line
+public gen_su3_element,SU3mult,SU2mult,detSU2_like,SU3_dagger,SU3_ReTr,embed_in_SU3,subgroup
+public SU3projector
 contains
 
 !==============================
@@ -49,9 +59,9 @@ call gen_su2_element(T)
 !Now we embed these matrices in 3x3 matrices
 !parametrized as su3 matrices
 
-call embedR(R,R3)
-call embedS(S,S3)
-call embedT(T,T3)
+call embed_in_SU3(R,1,2,R3)
+call embed_in_SU3(S,1,3,S3)
+call embed_in_SU3(T,2,3,T3)
 
 !Finally, we set V=R3*S3*T3
 call SU3mult(R3,S3,aux)
@@ -70,7 +80,7 @@ V%a(1) = rnor( )
 V%a(2) = rnor( )
 V%a(3) = rnor( )
 V%a(4) = rnor( )
-Norm = dsqrt(V%a(1)**2+V%a(2)**2+V%a(3)**2+V%a(4)**2)
+Norm = sqrt(V%a(1)**2+V%a(2)**2+V%a(3)**2+V%a(4)**2)
 V%a(1) = V%a(1)/Norm
 V%a(2) = V%a(2)/Norm
 V%a(3) = V%a(3)/Norm
@@ -115,145 +125,44 @@ end subroutine SU3_dagger
 !==============================
 
 !==============================
-!Takes the 2x2 upper-left block matrix of U
-!and write it in the shape of an SU(2) matrix.
-subroutine subgroupR(U,R)
-type(SU3), intent(in) :: U
+subroutine subgroup(V,i,j,R)
+type(SU3), intent(in) :: V
+real(dp), parameter :: f = 1.0_dp/3.0_dp
+integer, intent(in) :: i, j
 type(SU2), intent(out) :: R
 
-R%a(4) = U%re(1,1) + U%re(2,2)
-R%a(1) = -(U%im(2,1) + U%im(1,2))
-R%a(3) = -(U%im(1,1) - U%im(2,2))
-R%a(2) = -(U%re(1,2) - U%re(2,1))
+!I assume i < j but the routine does not explicitly check for this. Beware!
+R%a(1) = (V%im(j,i) + V%im(i,j))*f
+R%a(2) = (V%re(i,j) - V%re(j,i))*f
+R%a(3) = (V%im(i,i) - V%im(j,j))*f
+R%a(4) = (V%re(i,i) + V%re(j,j))*f
 
-end subroutine subgroupR
+end subroutine subgroup
 !==============================
 
 !==============================
-!Takes the corner elements of U
-!and write it in the shape of an SU(2) matrix.
-subroutine subgroupS(U,S)
-type(SU3), intent(in) :: U
-type(SU2), intent(out) :: S
-
-S%a(4) = U%re(1,1) + U%re(3,3)
-S%a(1) = -(U%im(3,1) + U%im(1,3))
-S%a(3) = -(U%im(1,1) - U%im(3,3))
-S%a(2) = -(U%re(1,3) - U%re(3,1))
-
-end subroutine subgroupS
-!==============================
-
-!==============================
-!Takes the 2x2 lower-right block matrix of U
-!and write it in the shape of an SU(2) matrix.
-subroutine subgroupT(U,T)
-type(SU3), intent(in) :: U
-type(SU2), intent(out) :: T
-
-T%a(4) = U%re(2,2) + U%re(3,3)
-T%a(1) = -(U%im(3,2) + U%im(2,3))
-T%a(3) = -(U%im(2,2) - U%im(3,3))
-T%a(2) = -(U%re(2,3) - U%re(3,2))
-
-end subroutine subgroupT
-!==============================
-
-!==============================
-!Embeds an SU(2) group element as an SU(3)
-!element belonging on the R type SU(2) subgroup
-subroutine embedR(R,R3)
+subroutine embed_in_SU3(R,i,j,V)
+type(SU3), intent(out) :: V
+integer, intent(in) :: i, j
 type(SU2), intent(in) :: R
-type(SU3), intent(out) :: R3
-
-!First line of R3
-R3%re(1,1) = R%a(4)
-R3%im(1,1) = R%a(3)
-R3%re(1,2) = R%a(2)
-R3%im(1,2) = R%a(1)
-R3%re(1,3) = 0.0_dp
-R3%im(1,3) = 0.0_dp
-!Second line of R3
-R3%re(2,1) = -R%a(2)
-R3%im(2,1) = R%a(1)
-R3%re(2,2) = R%a(4)
-R3%im(2,2) = -R%a(3)
-R3%re(2,3) = 0.0_dp
-R3%im(2,3) = 0.0_dp
-!Third line of R3
-R3%re(3,1) = 0.0_dp
-R3%im(3,1) = 0.0_dp
-R3%re(3,2) = 0.0_dp
-R3%im(3,2) = 0.0_dp
-R3%re(3,3) = 1.0_dp
-R3%im(3,3) = 0.0_dp
-
-end subroutine embedR
-!==============================
-
-!==============================
-!Embeds an SU(2) group element as an SU(3)
-!element belonging on the S type SU(2) subgroup
-subroutine embedS(S,S3)
-type(SU2), intent(in) :: S
-type(SU3), intent(out) :: S3
-
-!First line of S3
-S3%re(1,1) = S%a(4)
-S3%im(1,1) = S%a(3)
-S3%re(1,2) = 0.0_dp
-S3%im(1,2) = 0.0_dp
-S3%re(1,3) = S%a(2)
-S3%im(1,3) = S%a(1)
-!Second line of S3
-S3%re(2,1) = 0.0_dp
-S3%im(2,1) = 0.0_dp
-S3%re(2,2) = 1.0_dp
-S3%im(2,2) = 0.0_dp
-S3%re(2,3) = 0.0_dp
-S3%im(2,3) = 0.0_dp
-!Third line of S3
-S3%re(3,1) = -S%a(2)
-S3%im(3,1) = S%a(1)
-S3%re(3,2) = 0.0_dp
-S3%im(3,2) = 0.0_dp
-S3%re(3,3) = S%a(4)
-S3%im(3,3) = -S%a(3)
-
-end subroutine embedS
-!==============================
-
-!==============================
-!Embeds an SU(2) group element as an SU(3)
-!element belonging on the T type SU(2) subgroup
-subroutine embedT(T,T3)
-type(SU2), intent(in) :: T
-type(SU3), intent(out) :: T3
-
-!First line of T3
-T3%re(1,1) = 1.0_dp
-T3%im(1,1) = 0.0_dp
-T3%re(1,2) = 0.0_dp
-T3%im(1,2) = 0.0_dp
-T3%re(1,3) = 0.0_dp
-T3%im(1,3) = 0.0_dp
-!Second line of T3
-T3%re(2,1) = 0.0_dp
-T3%im(2,1) = 0.0_dp
-T3%re(2,2) = T%a(4)
-T3%im(2,2) = T%a(3)
-T3%re(2,3) = T%a(2)
-T3%im(2,3) = T%a(1)
-
-!Third line of T3
-T3%re(3,1) = 0.0_dp
-T3%im(3,1) = 0.0_dp
-T3%re(3,2) = -T%a(2)
-T3%im(3,2) = T%a(1)
-T3%re(3,3) = T%a(4)
-T3%im(3,3) = -T%a(3)
-
-end subroutine embedT
+integer :: k
+V%re = 0.0_dp
+V%im = 0.0_dp
+do k=1,3
+   if ( k .ne. i .and. k .ne. j) then
+      V%re(k,k) = 1.0_dp
+   end if
+end do
+V%re(i,i) = R%a(4)
+V%im(i,i) = R%a(3)
+V%re(j,i) = -R%a(2)
+V%im(j,i) = R%a(1)
+V%re(i,j) = R%a(2)
+V%im(i,j) = R%a(1)
+V%re(j,j) = R%a(4)
+V%im(j,j) = -R%a(3)
+ 
+end subroutine
 !==============================
 
 !==============================
@@ -298,92 +207,84 @@ end function SU3_ReTr
 !==============================
 
 !==============================
+!Checks if the input has deviated from SU(3) and in case
+!so, projects it again on the group
+subroutine SU3projector(A) !Needs finish implementing
+type(SU3), intent(inout) :: A
+real(dp), parameter :: tol = 1.0e-15
+real(dp) :: norm,normIm
+integer :: i
+
+If ( is_not_SU3(A) ) then
+   norm = sqrt( dot_product(A%re(1,:),A%re(1,:)) + dot_product(A%im(1,:),A%im(1,:)) )
+   A%re(1,:) = A%re(1,:)/norm
+   A%im(1,:) = A%im(1,:)/norm
+   norm   = dot_product(A%re(2,:),A%re(1,:)) + dot_product(A%im(2,:),A%im(1,:))
+   normIm = dot_product(A%im(2,:),A%re(1,:)) - dot_product(A%re(2,:),A%im(1,:))
+   A%re(2,:) = A%re(2,:) - (A%re(1,:)*norm - A%im(1,:)*normIm)
+   A%im(2,:) = A%im(2,:) - (A%re(1,:)*normIm + A%im(1,:)*norm)
+   norm = sqrt( dot_product(A%re(2,:),A%re(2,:)) + dot_product(A%im(2,:),A%im(2,:)) )
+   A%re(2,:) = A%re(2,:)/norm
+   A%im(2,:) = A%im(2,:)/norm
+   do i=1,3
+      A%re(3,i) =  cross_product(A%re(1,:),A%re(2,:),i) - cross_product(A%im(1,:),A%im(2,:),i)
+      A%im(3,i) = -cross_product(A%re(1,:),A%im(2,:),i) - cross_product(A%im(1,:),A%re(2,:),i)
+   end do
+   !For debug purposes, I do one more check. In case this fails. I print an error
+   !if (is_not_SU3(A)) then
+   !   print *, "Reunitarization of group element failed. Exitting now."
+   !   stop -1
+   !end if
+end if
+
+end subroutine SU3projector
+!==============================
+
+!==============================
 !Checks if the input has the properties of a SU(3) matrix
-!Created for debug purposes
-subroutine SU3check(A)
+logical function is_not_SU3(A)
 type(SU3), intent(in) :: A
-type(SU3) :: A_dagger,unity
-integer :: i,j,k,l
 
-!Check 1: Multiplying by its dagger should result in unity
-call SU3_dagger(A,A_dagger)
-call SU3mult(A,A_dagger,unity)
+!The idea is to check if the lines form an orthonormal basis
 
-do i=1,3
-   do j=1,3
-      if ( dabs(unity%im(i,j)) .gt. 1.0e-14_dp ) then
-            print *, "Warning: I generated a non-SU(3) element!"
-            print *, "Here is the real part of the offending matrix:"
-            do k=1,3
-               write(6,*) (A%re(l,k),l=1,3)
-            end do
-            print *, "Here is the imaginary part of the offending matrix:"
-            do k=1,3
-               write(6,*) (A%im(l,k),l=1,3)
-            end do
-            print *, "This matrix is not SU(3) because V . V^\dagger is:"
-            print *, "Real part:"
-            do k=1,3
-               write(6,*) (unity%re(l,k),l=1,3)
-            end do
-            print *, "Imaginary part:"
-            do k=1,3
-               write(6,*) (unity%im(l,k),l=1,3)
-            end do
-            print *, "Stopping now"
-            stop(1)
-      end if
-      if ( i .ne. j ) then
-         if ( dabs(unity%re(i,j)) .gt. 1.0e-14_dp ) then
-            print *, "Warning: I generated a non-SU(3) element!"
-            print *, "Here is the real part of the offending matrix:"
-            do k=1,3
-               write(6,*) (A%re(l,k),l=1,3)
-            end do
-            print *, "Here is the imaginary part of the offending matrix:"
-            do k=1,3
-               write(6,*) (A%im(l,k),l=1,3)
-            end do
-            print *, "This matrix is not SU(3) because V . V^\dagger is:"
-            print *, "Real part:"
-            do k=1,3
-               write(6,*) (unity%re(l,k),l=1,3)
-            end do
-            print *, "Imaginary part:"
-            do k=1,3
-               write(6,*) (unity%im(l,k),l=1,3)
-            end do
-            print *, "Stopping now"
-            stop(1)
-         end if
-      else
-         if ( dabs(unity%re(i,j) - 1.0_dp ) .gt. 1.0e-14_dp ) then
-            print *, "Warning: I generated a non-SU(3) element!"
-            print *, "Here is the real part of the offending matrix:"
-            do k=1,3
-               write(6,*) (A%re(l,k),l=1,3)
-            end do
-            print *, "Here is the imaginary part of the offending matrix:"
-            do k=1,3
-               write(6,*) (A%im(l,k),l=1,3)
-            end do
-            print *, "This matrix is not SU(3) because V . V^\dagger is:"
-            print *, "Real part:"
-            do k=1,3
-               write(6,*) (unity%re(l,k),l=1,3)
-            end do
-            print *, "Imaginary part:"
-            do k=1,3
-               write(6,*) (unity%im(l,k),l=1,3)
-            end do
-            print *, "Stopping now"
-            stop(1)
-         end if
-      end if
+!First, we check if all 3 vectors has modulus one
+!I will adopt a cascate of ifs, since if one of the conditions is
+!violated, I do not need to continue and returns that the element
+!does not belongs to SU3
+
+
+if ( abs( sqrt( dot_product(A%re(1,:),A%re(1,:)) + dot_product(A%im(1,:),A%im(1,:)) ) - 1.0_dp) .lt. tol .and. &   !Checks if first row has modulo 1
+     abs( sqrt( dot_product(A%re(2,:),A%re(2,:)) + dot_product(A%im(2,:),A%im(2,:)) ) - 1.0_dp) .lt. tol .and. &   !Checks if second row has modulo 1 
+     abs( dot_product(A%re(1,:),A%re(2,:)) + dot_product(A%im(1,:),A%im(2,:)) ) .lt. tol .and. &           !Checks if first line is orthogonal to second line (real part)
+     abs( dot_product(A%im(1,:),A%re(2,:)) - dot_product(A%re(1,:),A%im(2,:)) ) .lt. tol .and. &           !Checks if first line is orthogonal to second line (imaginary part)
+     abs( A%re(3,1) - cross_product(A%re(1,:),A%re(2,:),1) + cross_product(A%im(1,:),A%im(2,:),1) ) .lt. tol .and. &!Checks if first element of third line can be computed from the other two (real part)
+     abs( A%im(3,1) + cross_product(A%re(1,:),A%im(2,:),1) + cross_product(A%im(1,:),A%re(2,:),1) ) .lt. tol .and. &!Checks if first element of third line can be computed from the other two (imaginary part)
+     abs( A%re(3,2) - cross_product(A%re(1,:),A%re(2,:),2) + cross_product(A%im(1,:),A%im(2,:),2) ) .lt. tol .and. &!Checks if second element of third line can be computed from the other two (real part)
+     abs( A%im(3,2) + cross_product(A%re(1,:),A%im(2,:),2) + cross_product(A%im(1,:),A%re(2,:),2) ) .lt. tol .and. &!Checks if second element of third line can be computed from the other two (imaginary part)  
+     abs( A%re(3,3) - cross_product(A%re(1,:),A%re(2,:),3) + cross_product(A%im(1,:),A%im(2,:),3) ) .lt. tol .and. &!Checks if third element of third line can be computed from the other two (real part)
+     abs( A%im(3,3) + cross_product(A%re(1,:),A%im(2,:),3) + cross_product(A%im(1,:),A%re(2,:),3) ) .lt. tol ) then !Checks if third element of third line can be computed from the other two (imaginary part)  
+   
+   is_not_SU3 = .false.
+else
+   is_not_SU3 = .true.
+end if
+
+end function is_not_SU3
+!==============================
+   
+!==============================
+real(dp) function cross_product(A,B,i)
+real(dp), intent(in) :: A(3), B(3) !A cross product is usually defined only in dimension 3
+integer, intent(in) :: i !We compute only the i-th component 
+integer :: j,k
+   
+cross_product = 0.0_dp
+do j=1,3
+   do k=1,3
+      cross_product = cross_product + levi_civita(i,j,k)*A(j)*B(k)
    end do
 end do
 
-
-end subroutine
-!==============================
+end function cross_product
+   
 end module math
