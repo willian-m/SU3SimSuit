@@ -15,8 +15,9 @@ implicit none
 
 integer,parameter :: dp=kind(0.d0) !We use double precision by default.
                                    !change to 0.0 to use simple precision
-real(dp), parameter :: pi = dacos(-1.0_dp)
+real(dp), parameter :: pi = acos(-1.0_dp)
 real(dp), parameter :: two_pi = pi*2.0_dp
+real(dp), parameter :: tol = 1.0e-15_dp !Numerical error tolerance used on our checks
 integer :: nx,ny,nz,nt ! Lattice dimensions
 real(dp) :: beta ! Beta parameter of the simulation
 

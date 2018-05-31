@@ -39,7 +39,7 @@ implicit none
 !==============================
 !List of variables
 integer :: clock !Used as seed
-integer :: seed(2),n,nmc
+integer :: n,nmc
 integer :: rec_step
 !==============================
 
@@ -60,6 +60,7 @@ print*, "Beta:", beta
 
 !Initialize the lattice according to user request
 call init_lattice(lattice_file)
+call write_lattice(0)
 do n=1,nmc
    call heat_bath_method
    print *, dble(n)*100.0_dp/nmc, "% completed."
@@ -86,7 +87,7 @@ contains !REMEMBER: Make sure var names declared on the functions and
 
    if (COMMAND_ARGUMENT_COUNT() .lt. min_num_par) then
       print*, "It is mandatory to pass at least 8 parameters as input in the format:"
-      print*, "nx ny nz nt beta H/C NMC recordStep [lattice/Data/FilePath.dat"
+      print*, "nx ny nz nt beta H/C NMC recordStep [lattice/Data/FilePath.dat]"
       print*,"  -nx,ny,nz,nt: integers representing the lattice dimensions nx, ny, nz and nt"
       print*,"  -beta: a float corresponding to the value of beta"
       print*,'  -H/C: choose between a "Hot"(H) start or a "Cold"(C) start'

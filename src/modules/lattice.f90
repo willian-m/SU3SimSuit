@@ -72,12 +72,15 @@ end subroutine
 !Initialize the lattice in a cold state
 subroutine init_cold
    type(SU3) :: V
-   call gen_su3_element(V)
+   !call gen_su3_element(V)
+   V%re = 0.0_dp
+   V%im = 0.0_dp
+   V%re(1,1) = 1.0_dp
+   V%re(2,2) = 1.0_dp
+   V%re(3,3) = 1.0_dp
    do x=0,nx*ny*nz*nt-1
-      do d=2,8,2
-         y = x + increment_table(x,d)
+      do d=1,8
          U(d,x) = V
-         call SU3_dagger(V,U(d-1,y))
       end do
    end do
 end subroutine
@@ -86,7 +89,6 @@ end subroutine
 !==============================
 !Initialize table of neighbours
 subroutine init_aux_tables()
-   implicit none
    integer :: i,j,k,l,x
 
    !We allocate a vector that maps the pos vector into an 1D array

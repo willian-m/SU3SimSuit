@@ -3,5 +3,5 @@
 	<Configurations>
 		<Configuration Name="Debug|Win32"/>
 		<Configuration Name="Release|Win32"/>
-		<Configuration Name="Debug|x64" CommandArguments="4 4 4 4 5.60 H 1000 1"/>
+		<Configuration Name="Debug|x64" CommandArguments="8 8 8 8 5.70 H 1000 1"/>
 		<Configuration Name="Release|x64"/></Configurations></VisualStudioUserFile>
