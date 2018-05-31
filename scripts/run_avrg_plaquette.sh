@@ -1,4 +1,5 @@
 #!/bin/bash
+LC_NUMERIC=en_US.utf-8 #Needed to avoid user locale using a comma as decimal separator
 
 #This script assumes it is being run from inside the project root directory
 DIR=`pwd`
