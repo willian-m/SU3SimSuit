@@ -21,7 +21,8 @@ def auto_corr(d):
         out[-1] = out[-1] - avrg**2
     return(out)            
 
-root_dir = "D:\\git_repos\\SU3SimSuit"
+#root_dir = "D:\\git_repos\\SU3SimSui"
+root_dir = "/home/willian/git_repos/SU3SimSuit"
 data=loadtxt(root_dir+'/output/avrg_plaquette.out')
 
 
@@ -29,7 +30,7 @@ plt.plot(range(len(data)),data)
 
 #input("Press enter to continue.")
 
-therm=25 #Thermalization time
+therm=1400 #Thermalization time
 
 c = auto_corr(data[therm:])
 plt.figure()

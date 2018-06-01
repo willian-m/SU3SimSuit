@@ -82,8 +82,7 @@ subroutine compute_staple(d,x,staple)
    type(SU3) :: aux1,aux2
    integer :: d2,x1,x2,x3,x4,x5
 
-   staple%re=0.0_dp
-   staple%im=0.0_dp
+   staple%a= cmplx(0.0_dp, 0.0_dp)
    do d2=2,8,2
       if (d2 .ne. d) then
 
@@ -96,14 +95,12 @@ subroutine compute_staple(d,x,staple)
          call SU3mult(U(d2,x1),U(d-1,x2),aux1)
          call SU3mult(aux1,U(d2-1,x3),aux2)
 
-         staple%re = staple%re + aux2%re
-         staple%im = staple%im + aux2%im
+         staple%a = staple%a + aux2%a
 
          call SU3mult(U(d2-1,x1),U(d-1,x4),aux1)
          call SU3mult(aux1,U(d2,x5),aux2)
 
-         staple%re = staple%re + aux2%re
-         staple%im = staple%im + aux2%im
+         staple%a = staple%a + aux2%a
 
       end if
    end do

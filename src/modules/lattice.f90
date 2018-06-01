@@ -73,11 +73,10 @@ end subroutine
 subroutine init_cold
    type(SU3) :: V
    !call gen_su3_element(V)
-   V%re = 0.0_dp
-   V%im = 0.0_dp
-   V%re(1,1) = 1.0_dp
-   V%re(2,2) = 1.0_dp
-   V%re(3,3) = 1.0_dp
+   V%a = cmplx( 0.0_dp, 0.d0)
+   V%a(1,1) = cmplx( 1.0_dp, 0.d0)
+   V%a(2,2) = cmplx( 1.0_dp, 0.d0)
+   V%a(3,3) = cmplx( 1.0_dp, 0.d0)
    do x=0,nx*ny*nz*nt-1
       do d=1,8
          U(d,x) = V

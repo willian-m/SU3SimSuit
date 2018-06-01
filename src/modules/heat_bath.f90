@@ -79,13 +79,11 @@ do a=1,2
          !Creutz book 'Quarks, gluons and lattices'. GL method is found in
          !Gattringer & Lang book 'Quantum Chromodynamics on the Lattice'.
          !Use one method or another.
-      call random_a4_GL(det,X%a(4))
-         !Now that we have a(4), we pick the other three by randomly picking a vector
-         !On the surface of an sphere of radius sqrt(1-a(4)**2)
-      call rand_pnt_sphere_marsaglia(sqrt(1.0_dp - X%a(4)**2),X%a(1:3))
+      call rand_boltzmann_GL(det,X)
 
       !6)Takes the dagger of V
-      V%a(1:3) = -V%a(1:3)
+      V%a(1) = conjg(V%a(1))
+      V%a(2) = -V%a(2)
  
       !7)The new Rw' is Rw' = X*V^\dagger
       call SU2mult(X,V,Rw)
@@ -95,7 +93,7 @@ do a=1,2
       !9)Update the link
       call SU3mult(R,U(d,y),Aux)
       !10)Look for possible rounding error in the updated link and fix it
-      call SU3projector(Aux)
+      !call SU3projector(Aux)
      
       !11)Saves the link for next iteration
       U(d,y) = Aux
@@ -126,28 +124,34 @@ end subroutine random_a4_Creutz
 !==============================
 
 !==============================
-!Randomly pick a(4) following the right distribution - GL method
-subroutine random_a4_GL(det,a4)
+!Randomly pick an SU(2) element, follwing a Boltzmann distrinution - GL method
+subroutine rand_boltzmann_GL(det,V)
 use ziggurat
 real(dp), intent(in) :: det
-real(dp), intent(inout) :: a4
-real(dp) :: r(4), lambda2
+type(SU2), intent(inout) :: V
+real(dp) :: r(4), lambda2, a4,a(3)
 integer :: i
 logical :: not_accepted
+
 not_accepted = .true.
 
 do while ( not_accepted )
-call random_number(r)
-do i=1,4
-   r(i) = 1.0_dp - r(i)
+   call random_number(r)
+   do i=1,4
+      r(i) = 1.0_dp - r(i)
+   end do
+   lambda2 = -7.5e-1_dp*(log(r(1)) + log(r(3))*(cos(two_pi*r(2)))**2)/(det*beta)
+   if ( r(4)**2 .le. 1.0_dp - lambda2) then
+      a4 = 1.0_dp - lambda2*2.0_dp
+      not_accepted = .false.
+   end if
 end do
-lambda2 = -(log(r(1)) + log(r(3))*(cos(two_pi*r(2)))**2)/(det*beta*2.0_dp)
-if ( r(4)**2 .le. 1.0_dp - lambda2) then
-   a4 = 1.0_dp - lambda2*2.0_dp
-   not_accepted = .false.
-end if
-end do
-end subroutine random_a4_GL
+
+call rand_pnt_sphere_marsaglia(sqrt(1.0_dp-a4**2),a)
+V%a(1)=cmplx(a4,a(1))
+V%a(2)=cmplx(a(2),a(3))
+
+end subroutine rand_boltzmann_GL
 !==============================
 
 !==============================

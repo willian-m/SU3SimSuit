@@ -22,12 +22,11 @@ integer :: nx,ny,nz,nt ! Lattice dimensions
 real(dp) :: beta ! Beta parameter of the simulation
 
 type SU2
-   real(dp) :: a(4)
+   complex(dp) :: a(2)
 end type SU2
 
 type SU3
-   real(dp) :: re(3,3)
-   real(dp) :: im(3,3)
+   complex(dp) :: a(3,3)
 end type
 
 
