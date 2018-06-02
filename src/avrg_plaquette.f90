@@ -45,7 +45,7 @@ do x=0,nx*ny*nz*nt-1
 end do
 
 !Normalizes
-avrg_plaq = avrg_plaq/(6.0_dp*nx*ny*nz*nt)
+avrg_plaq = avrg_plaq/(6.0_dp*nx*ny*nz*nt*3.0_dp)
 
 !prints to stdin
 write(6,"(ES23.15E3)") avrg_plaq

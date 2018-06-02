@@ -41,7 +41,7 @@ integer :: levi_civita(3,3,3) = reshape((/0,0,0, & !i=1,j=1
 
 private
 public gen_su3_element,SU3mult,SU2mult,detSU2_like,SU3_dagger,SU3_ReTr,embed_in_SU3,subgroup
-public SU3projector
+public SU3projector,is_not_SU3
 contains
 
 !==============================
@@ -78,7 +78,7 @@ real(dp) :: norm
 
 V%a(1) = cmplx( rnor( ), rnor( ) )
 V%a(2) = cmplx( rnor( ), rnor( ) )
-Norm = sqrt( V%a(1)*conjg(V%a(1)) +  V%a(1)*conjg(V%a(1)) )
+Norm = sqrt( real(V%a(1)*conjg(V%a(1)) +  V%a(2)*conjg(V%a(2))) )
 V%a = V%a/Norm
 end subroutine gen_su2_element
 !==============================
@@ -190,12 +190,28 @@ complex(dp) :: angle
 integer :: i
 
 If ( is_not_SU3(A) ) then
-   norm = sqrt( real( dot_product(A%a(:,1),conjg(A%a(:,1))) ) )
+   print *, dot_product(A%a(:,1),conjg(A%a(:,1)))
+   !Computes the norm of the first column
+   norm = 0.0_dp
+   do i=1,3
+      norm = norm + A%a(i,1)*conjg(A%a(i,1))
+   end do
+   norm = sqrt( real( norm ) )
    A%a(:,1) = A%a(:,1)/norm
-   angle = dot_product(A%a(:,2),conjg(A%a(:,1)))
-   A%a(2,:) = A%a(:,2) - A%a(:,1)*angle
-   norm = sqrt( real( dot_product(A%a(:,2),conjg(A%a(:,2))) ) )
+   !Computes the dot product between first and second columns
+   angle = 0.0_dp
+   do i=1,3
+      angle = angle + A%a(i,2)*conjg(A%a(i,1))
+   end do
+   A%a(:,2) = A%a(:,2) - A%a(:,1)*angle
+   !Normalize the second column
+   norm = 0.0_dp
+   do i=1,3
+      norm = norm + A%a(i,2)*conjg(A%a(i,2))
+   end do
+   norm = sqrt( real( norm ) )
    A%a(:,2) = A%a(:,2)/norm
+   !Third column is obtained as the cross product between first and second columns   
    do i=1,3
       A%a(i,3) =  cross_product(conjg(A%a(:,1)),conjg(A%a(:,2)),i) 
    end do
@@ -214,24 +230,45 @@ end subroutine SU3projector
 logical function is_not_SU3(A)
 type(SU3), intent(in) :: A
 type(SU3) :: A_dagger,identity
-real(dp) :: d
+complex(dp) :: d
+integer :: i,j,k
 
+call SU3_dagger(A,A_dagger)
+call SU3mult(A,A_dagger,identity)
+d = cmplx(0.0_dp,0.0_dp)
+do i=1,3
+   do j=1,3
+      do k=1,3
+      d = d + levi_civita(i,j,k)*A%a(1,i)*A%a(2,j)*A%a(3,k)    
+      end do
+   end do
+end do
 !First, we check if all 3 vectors has modulus one
 !I will adopt a cascate of ifs, since if one of the conditions is
 !violated, I do not need to continue and returns that the element
 !does not belongs to SU3
 
-
-if ( abs( sqrt( real(dot_product(A%a(:,1),conjg(A%a(:,1))) )  ) - 1.0_dp) .lt. tol .and. &   !Checks if first column has modulo 1
-     abs( sqrt( real(dot_product(A%a(:,2),conjg(A%a(:,2))) )  ) - 1.0_dp) .lt. tol .and. &   !Checks if second column has modulo 1
-     abs( real( dot_product(A%a(:,1),conjg(A%a(:,2))) ) )  .lt. tol .and. &           !Checks if first column is orthogonal to second column (real part)
-     abs(aimag( dot_product(A%a(:,1),conjg(A%a(:,2))) ) )  .lt. tol .and. &           !Checks if first column is orthogonal to second column (imag part)
-     abs( real(A%a(1,3) - cross_product(conjg(A%a(:,1)),conjg(A%a(:,2)),1) ) ) .lt. tol .and. &
-     abs(aimag(A%a(1,3) - cross_product(conjg(A%a(:,1)),conjg(A%a(:,2)),1) ) ) .lt. tol .and.  &
-     abs( real(A%a(2,3) - cross_product(conjg(A%a(:,1)),conjg(A%a(:,2)),2) ) ) .lt. tol .and.  &
-     abs(aimag(A%a(2,3) - cross_product(conjg(A%a(:,1)),conjg(A%a(:,2)),2) ) ) .lt. tol .and.  &
-     abs( real(A%a(3,3) - cross_product(conjg(A%a(:,1)),conjg(A%a(:,2)),3) ) ) .lt. tol .and.  &
-     abs(aimag(A%a(3,3) - cross_product(conjg(A%a(:,1)),conjg(A%a(:,2)),3) ) ) .lt. tol  ) then !Checks if third element of third line can be computed from the other two (imaginary part)  
+print *, sqrt(identity%a(1,1))
+if ( abs( real(identity%a(1,1)) - 1.0_dp) .lt. tol .and. &
+     abs( real(identity%a(2,2)) - 1.0_dp) .lt. tol .and. &
+     abs( real(identity%a(3,3)) - 1.0_dp) .lt. tol .and. &
+     abs( aimag(identity%a(1,1))) .lt. tol .and. &
+     abs( aimag(identity%a(2,2))) .lt. tol .and. &
+     abs( aimag(identity%a(3,3))) .lt. tol .and. &
+     abs( real(identity%a(2,1))) .lt. tol .and. &
+     abs( real(identity%a(3,1))) .lt. tol .and. &
+     abs( real(identity%a(1,2))) .lt. tol .and. &
+     abs( real(identity%a(3,2))) .lt. tol .and. &
+     abs( real(identity%a(1,3))) .lt. tol .and. &
+     abs( real(identity%a(2,3))) .lt. tol .and. &
+     abs( aimag(identity%a(2,1))) .lt. tol .and. &
+     abs( aimag(identity%a(3,1))) .lt. tol .and. &
+     abs( aimag(identity%a(1,2))) .lt. tol .and. &
+     abs( aimag(identity%a(3,2))) .lt. tol .and. &
+     abs( aimag(identity%a(1,3))) .lt. tol .and. &
+     abs( aimag(identity%a(2,3))) .lt. tol .and. &
+     abs( real(d)-1.0_dp ) .lt. tol .and. &
+     abs( aimag(d) ) .lt. tol ) then
    is_not_SU3 = .false.
 else
    is_not_SU3 = .true.
