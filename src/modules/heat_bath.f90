@@ -12,7 +12,7 @@
 module heat_bath
 use types_params
 use lattice, only : increment_table
-use math, only : SU3mult,SU2mult,detSU2_like,subgroup,embed_in_SU3,SU3_dagger,SU3projector
+use math, only : SU3mult,SU2mult,detSU2_like,subgroup,embed_in_SU3,SU3_dagger,SU3projector,invert_3x3_complex
 use objects, only : compute_staple
 implicit none
 
@@ -101,6 +101,10 @@ do a=1,2
    end do
 end do
 
+!As a final step, we perform one overrelax hit
+call overrelax(U(d,y))
+call SU3_dagger(U(d,y),U(d-1,y+increment_table(y,d)))
+
 end subroutine heat_bath_hit
 !==============================
 
@@ -181,5 +185,33 @@ A(2) = temp(2)*R
 A(3) = temp(3)*R
 
 end subroutine rand_pnt_sphere_marsaglia
+!==============================
+
+!==============================
+!Performs overrelaxation sweep
+!WARNING! This destroys the value of the staple.
+!Thus, it should be ran only as a last step
+subroutine overrelax(U)
+type(SU3), intent(inout) :: U
+type(SU3) :: g0, inverse, aux
+integer :: i,j
+!1) Projects staple into SU3
+call SU3projector(staple)
+
+!2) Inverts the resulting matrix.
+call invert_3x3_complex(staple,g0)
+call SU3mult(staple,g0,aux)
+print*, aux
+stop -1
+
+!3) Inverts the lattice link
+call invert_3x3_complex(U,inverse)
+
+!4) U' = g0 * U^-1 * g0
+call SU3mult(g0,inverse,aux)
+call SU3mult(aux,g0,U)
+
+!5) We make sure we did not left the SU3 group after all these transformations
+end subroutine overrelax
 
 end module heat_bath

@@ -41,7 +41,7 @@ integer :: levi_civita(3,3,3) = reshape((/0,0,0, & !i=1,j=1
 
 private
 public gen_su3_element,SU3mult,SU2mult,detSU2_like,SU3_dagger,SU3_ReTr,embed_in_SU3,subgroup
-public SU3projector,is_not_SU3
+public SU3projector,is_not_SU3,invert_3x3_complex
 contains
 
 !==============================
@@ -157,6 +157,25 @@ detSU2_like = U%a(1)*conjg(U%a(1)) + U%a(2)*conjg(U%a(2))
 end function detSU2_like 
 !==============================
 
+
+!==============================
+!Computes the determinant of an 3x3 complex matrix
+!encapsulated in a SU3 struct
+complex(dp) function detSU3_like(U)
+type(SU3), intent(in) :: U
+integer :: i,j,k
+
+detSU3_like = cmplx(0.0_dp, 0.0_dp)
+do i=1,3
+   do j=1,3
+      do k=1,3
+         detSU3_like = detSU3_like + levi_civita(i,j,k)*U%a(i,1)*U%a(j,2)*U%a(k,3)
+      end do
+   end do
+end do 
+end function detSU3_like 
+!==============================
+
 !==============================
 !Multiply two SU(2)-like matrices
 subroutine SU2mult(U1,U2,U3)
@@ -260,5 +279,29 @@ do j=1,3
 end do
 
 end function cross_product
-   
+!==============================
+
+!==============================
+!Inverts an 3x3 complex matrix
+subroutine invert_3x3_complex(U,V)
+type(SU3),intent(in) :: U
+type(SU3),intent(out) :: V
+complex(dp) :: detU
+
+detU = detSU3_like(U)
+if ( abs(real(detU)) .gt. tol .or. abs(imag(detU)) .gt. tol) then !If matrix not singular
+   V%a(1,1) = U%a(2,2)*U%a(3,3) - U%a(3,2)*U%a(2,3)
+   V%a(1,2) = U%a(1,3)*U%a(3,2) - U%a(3,3)*U%a(1,2)
+   V%a(1,3) = U%a(1,2)*U%a(2,3) - U%a(2,2)*U%a(1,3)
+   V%a(2,1) = U%a(2,3)*U%a(3,1) - U%a(3,3)*U%a(2,1)
+   V%a(2,2) = U%a(1,1)*U%a(3,3) - U%a(3,1)*U%a(1,3)
+   V%a(2,3) = U%a(1,3)*U%a(2,1) - U%a(2,3)*U%a(1,1)
+   V%a(3,1) = U%a(2,1)*U%a(3,2) - U%a(3,1)*U%a(2,2)
+   V%a(3,2) = U%a(1,2)*U%a(3,1) - U%a(3,2)*U%a(1,1)
+   V%a(3,3) = U%a(1,1)*U%a(2,2) - U%a(2,1)*U%a(1,2)
+   V%a = V%a/detU
+end if
+end subroutine invert_3x3_complex
+!==============================
+
 end module math
