@@ -93,7 +93,7 @@ do a=1,2
       !9)Update the link
       call SU3mult(R,U(d,y),Aux)
       !10)Look for possible rounding error in the updated link and fix it
-      !call SU3projector(Aux)
+      call SU3projector(Aux)
      
       !11)Saves the link for next iteration
       U(d,y) = Aux

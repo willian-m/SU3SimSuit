@@ -190,36 +190,25 @@ complex(dp) :: angle
 integer :: i
 
 If ( is_not_SU3(A) ) then
-   print *, dot_product(A%a(:,1),conjg(A%a(:,1)))
-   !Computes the norm of the first column
-   norm = 0.0_dp
-   do i=1,3
-      norm = norm + A%a(i,1)*conjg(A%a(i,1))
-   end do
-   norm = sqrt( real( norm ) )
+  !Computes the norm of the first column
+   norm = sqrt(dot_product(real(A%a(:,1)),real(A%a(:,1))) + dot_product(imag(A%a(:,1)),imag(A%a(:,1))))
    A%a(:,1) = A%a(:,1)/norm
    !Computes the dot product between first and second columns
-   angle = 0.0_dp
-   do i=1,3
-      angle = angle + A%a(i,2)*conjg(A%a(i,1))
-   end do
+   angle = cmplx(dot_product(real(A%a(:,1)),real(A%a(:,2))) + dot_product(imag(A%a(:,1)),imag(A%a(:,2))),&
+                 dot_product(imag(A%a(:,2)),real(A%a(:,1))) - dot_product(real(A%a(:,2)),imag(A%a(:,1))))
    A%a(:,2) = A%a(:,2) - A%a(:,1)*angle
    !Normalize the second column
-   norm = 0.0_dp
-   do i=1,3
-      norm = norm + A%a(i,2)*conjg(A%a(i,2))
-   end do
-   norm = sqrt( real( norm ) )
+   norm = sqrt(dot_product(real(A%a(:,2)),real(A%a(:,2))) + dot_product(imag(A%a(:,2)),imag(A%a(:,2))))
    A%a(:,2) = A%a(:,2)/norm
    !Third column is obtained as the cross product between first and second columns   
    do i=1,3
       A%a(i,3) =  cross_product(conjg(A%a(:,1)),conjg(A%a(:,2)),i) 
    end do
    !For debug purposes, I do one more check. In case this fails. I print an error
-   if (is_not_SU3(A)) then
-      print *, "Reunitarization of group element failed. Exitting now."
-      stop -1
-   end if
+!   if (is_not_SU3(A)) then
+!      print *, "Reunitarization of group element failed. Exitting now."
+!      stop -1
+!   end if
 end if
 
 end subroutine SU3projector
@@ -229,51 +218,31 @@ end subroutine SU3projector
 !Checks if the input has the properties of a SU(3) matrix
 logical function is_not_SU3(A)
 type(SU3), intent(in) :: A
-type(SU3) :: A_dagger,identity
-complex(dp) :: d
-integer :: i,j,k
 
-call SU3_dagger(A,A_dagger)
-call SU3mult(A,A_dagger,identity)
-d = cmplx(0.0_dp,0.0_dp)
-do i=1,3
-   do j=1,3
-      do k=1,3
-      d = d + levi_civita(i,j,k)*A%a(1,i)*A%a(2,j)*A%a(3,k)    
-      end do
-   end do
-end do
-!First, we check if all 3 vectors has modulus one
-!I will adopt a cascate of ifs, since if one of the conditions is
-!violated, I do not need to continue and returns that the element
-!does not belongs to SU3
-
-print *, sqrt(identity%a(1,1))
-if ( abs( real(identity%a(1,1)) - 1.0_dp) .lt. tol .and. &
-     abs( real(identity%a(2,2)) - 1.0_dp) .lt. tol .and. &
-     abs( real(identity%a(3,3)) - 1.0_dp) .lt. tol .and. &
-     abs( aimag(identity%a(1,1))) .lt. tol .and. &
-     abs( aimag(identity%a(2,2))) .lt. tol .and. &
-     abs( aimag(identity%a(3,3))) .lt. tol .and. &
-     abs( real(identity%a(2,1))) .lt. tol .and. &
-     abs( real(identity%a(3,1))) .lt. tol .and. &
-     abs( real(identity%a(1,2))) .lt. tol .and. &
-     abs( real(identity%a(3,2))) .lt. tol .and. &
-     abs( real(identity%a(1,3))) .lt. tol .and. &
-     abs( real(identity%a(2,3))) .lt. tol .and. &
-     abs( aimag(identity%a(2,1))) .lt. tol .and. &
-     abs( aimag(identity%a(3,1))) .lt. tol .and. &
-     abs( aimag(identity%a(1,2))) .lt. tol .and. &
-     abs( aimag(identity%a(3,2))) .lt. tol .and. &
-     abs( aimag(identity%a(1,3))) .lt. tol .and. &
-     abs( aimag(identity%a(2,3))) .lt. tol .and. &
-     abs( real(d)-1.0_dp ) .lt. tol .and. &
-     abs( aimag(d) ) .lt. tol ) then
+if( abs(sqrt(dot_product(real(A%a(:,1)),real(A%a(:,1))) + dot_product(imag(A%a(:,1)),imag(A%a(:,1)))) - 1.0_dp) .lt. tol .and. & 
+    abs(sqrt(dot_product(real(A%a(:,2)),real(A%a(:,2))) + dot_product(imag(A%a(:,2)),imag(A%a(:,2)))) - 1.0_dp) .lt. tol .and. & 
+    abs(sqrt(dot_product(real(A%a(:,3)),real(A%a(:,3))) + dot_product(imag(A%a(:,3)),imag(A%a(:,3)))) - 1.0_dp) .lt. tol .and. &
+    abs(dot_product(real(A%a(:,1)),real(A%a(:,2))) + dot_product(imag(A%a(:,1)),imag(A%a(:,2)))) .lt. tol .and. & 
+    abs(dot_product(imag(A%a(:,1)),real(A%a(:,2))) - dot_product(real(A%a(:,1)),imag(A%a(:,2)))) .lt. tol .and. & 
+    abs(dot_product(real(A%a(:,1)),real(A%a(:,3))) + dot_product(imag(A%a(:,1)),imag(A%a(:,3)))) .lt. tol .and. & 
+    abs(dot_product(imag(A%a(:,1)),real(A%a(:,3))) - dot_product(real(A%a(:,1)),imag(A%a(:,3)))) .lt. tol .and. & 
+    abs(dot_product(real(A%a(:,2)),real(A%a(:,3))) + dot_product(imag(A%a(:,2)),imag(A%a(:,3)))) .lt. tol .and. & 
+    abs(dot_product(imag(A%a(:,2)),real(A%a(:,3))) - dot_product(real(A%a(:,2)),imag(A%a(:,3)))) .lt. tol) then
    is_not_SU3 = .false.
 else
    is_not_SU3 = .true.
+   !print *, "List of failed tests"
+   !write(6,*) abs(sqrt(dot_product(real(A%a(:,1)),real(A%a(:,1))) + dot_product(imag(A%a(:,1)),imag(A%a(:,1)))) - 1.0_dp)   
+   !write(6,*) abs(sqrt(dot_product(real(A%a(:,2)),real(A%a(:,2))) + dot_product(imag(A%a(:,2)),imag(A%a(:,2)))) - 1.0_dp)   
+   !write(6,*) abs(sqrt(dot_product(real(A%a(:,3)),real(A%a(:,3))) + dot_product(imag(A%a(:,3)),imag(A%a(:,3)))) - 1.0_dp)  
+   !write(6,*) abs(dot_product(real(A%a(:,1)),real(A%a(:,2))) + dot_product(imag(A%a(:,1)),imag(A%a(:,2))))   
+   !write(6,*) abs(dot_product(imag(A%a(:,1)),real(A%a(:,2))) - dot_product(real(A%a(:,1)),imag(A%a(:,2)))) 
+   !write(6,*) abs(dot_product(real(A%a(:,1)),real(A%a(:,3))) + dot_product(imag(A%a(:,1)),imag(A%a(:,3))))   
+   !write(6,*) abs(dot_product(imag(A%a(:,1)),real(A%a(:,3))) - dot_product(real(A%a(:,1)),imag(A%a(:,3))))   
+   !write(6,*) abs(dot_product(real(A%a(:,2)),real(A%a(:,3))) + dot_product(imag(A%a(:,2)),imag(A%a(:,3))))   
+   !write(6,*) abs(dot_product(imag(A%a(:,2)),real(A%a(:,3))) - dot_product(real(A%a(:,2)),imag(A%a(:,3))))
 end if
-
+   
 end function is_not_SU3
 !==============================
    
