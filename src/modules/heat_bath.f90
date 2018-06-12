@@ -12,7 +12,7 @@
 module heat_bath
 use types_params
 use lattice, only : increment_table
-use math, only : SU3mult,SU2mult,detSU2_like,subgroup,embed_in_SU3,SU3_dagger,SU3projector,invert_3x3_complex
+use math, only : SU3mult,SU2mult,detSU2_like,subgroup,embed_in_SU3,SU3_dagger,SU3projector,invert_3x3_complex,SU3_ReTr
 use objects, only : compute_staple
 implicit none
 
@@ -189,27 +189,40 @@ end subroutine rand_pnt_sphere_marsaglia
 
 !==============================
 !Performs overrelaxation sweep
-!WARNING! This destroys the value of the staple.
-!Thus, it should be ran only as a last step
-subroutine overrelax(U)
-type(SU3), intent(inout) :: U
-type(SU3) :: g0, inverse, aux
+subroutine overrelax(V)
+type(SU3), intent(inout) :: V
+type(SU3) :: g0, inverse, aux1, Vnew
 integer :: i,j
-!1) Projects staple into SU3
-call SU3projector(staple)
+real(dp) :: deltaS,r
 
-!2) Inverts the resulting matrix.
-call invert_3x3_complex(staple,g0)
-call SU3mult(staple,g0,aux)
-print*, aux
-stop -1
+aux1 = staple
+!1) Projects staple into SU3
+call SU3projector(aux1)
+
+!2) Inverts the resulting matrix. This is g0
+call invert_3x3_complex(aux1,g0)
 
 !3) Inverts the lattice link
-call invert_3x3_complex(U,inverse)
+call invert_3x3_complex(V,inverse)
 
 !4) U' = g0 * U^-1 * g0
-call SU3mult(g0,inverse,aux)
-call SU3mult(aux,g0,U)
+call SU3mult(g0,inverse,aux1)
+call SU3mult(aux1,g0,Vnew)
+
+!5) This procedure does not draw elements following the right distribution,
+!Thus we will need to accept the new element in a similar fashion as in the
+!Metropolis algorithm
+
+!Compute deltaS
+aux1%a = V%a - Vnew%a
+call SU3mult(aux1,staple,g0) !Using g0 to store value to save memory
+deltaS= beta*SU3_ReTr(g0)/3.0_dp
+
+call random_number(r)
+if (r .le. exp(-deltaS) ) then
+   V = Vnew
+   call SU3projector(V)
+end if
 
 !5) We make sure we did not left the SU3 group after all these transformations
 end subroutine overrelax
