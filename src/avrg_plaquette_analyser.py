@@ -1,44 +1,54 @@
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 """
-Spyder Editor
-
-This is a temporary script file.
 """
 
 from numpy import loadtxt,average,std
 import numpy as np
 from matplotlib import pyplot as plt
-from math import sqrt
+from math import sqrt,log
 
 def auto_corr(d):
-    out=[]
-    avrg = average(d)
-    for i in range(int(len(d)/2)):
-        out.append(0)
-        for j in range(int(len(d)/2)):
-            out[-1] =out[-1] + d[j]*d[i+j]
-        out[-1] = out[-1]/int(len(d)/2)
-        out[-1] = out[-1] - avrg**2
-    return(out)            
+    len_out = int(len(d)/2)
+    out=np.zeros(len_out)
+    avrg = average(d[:len_out])
+    for t in range(len_out):
+        for s in range(int(len_out)):
+            out[t] = out[t] + d[t+s]*d[s] - avrg**2
+        out[t] = out[t]/(len_out) #- avrg**2
+    out = out/np.std(d)**2
+    return(out)
 
-root_dir = "D:\\git_repos\\SU3SimSuit"
-#root_dir = "/home/willian/d/git_repos/SU3SimSuit"
+def exp_time(correl_func):
+    out=np.zeros(len(correl_func))
+    for i in range(len(correl_func)):
+        #print(i,log(abs(correl_func[i])))
+        out[i] = -i/log(abs(correl_func[i]))
+    return(out)
+    
+#root_dir = "D:\\git_repos\\SU3SimSuit"
+root_dir = "/home/willian/git_repos/SU3SimSuit"
 data=loadtxt(root_dir+'/output/avrg_plaquette.out')
 
+#data=data[:5000]
 
 plt.plot(range(len(data)),data)
 
 #input("Press enter to continue.")
 
-therm=1 #Thermalization time
+therm=50 #Thermalization time
 
 c = auto_corr(data[therm:])
+tau_exp = exp_time(c)
 plt.figure()
 plt.plot(range(len(c)),c)
+#plt.figure()
+#plt.plot(range(len(tau_exp)),tau_exp)
 
-t=50
+
+t=1
 plt.figure()
-plt.plot(range(len(data[therm::t])),data[therm::t])
+plt.plot(range(0,len(data[therm::t])),data[therm::t])
 print(average(data[therm::t]),'+/-',std(data[therm::t])/sqrt((len(data[therm::t]))))
 
 def jacknife(data,nbins):
@@ -57,11 +67,7 @@ def jacknife(data,nbins):
     
     error = error*(nbins-1.0)/nbins
     return(error)
-        
-print(average(data[therm:]),'+/-',std(data[therm:])/sqrt((len(data)-therm)))
 
 print("Jacknife error:",jacknife(data[therm:],4))
-#plt.plot(range(len(data)),data)
-
 plt.show()
 
