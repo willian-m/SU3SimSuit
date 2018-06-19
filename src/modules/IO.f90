@@ -31,10 +31,10 @@ private
 public write_lattice,read_lattice
 contains
       
-subroutine write_lattice(sweepNum)
-integer,intent(in) :: sweepNum
-character(len=50) :: fileName
-   write(filename,"('links',4I3.3,'beta',F4.2,'Sweep',I9.9,'.dat')") nx,ny,nz,nt,beta,sweepNum
+subroutine write_lattice(nslices,sweepNum,subsweepNum)
+integer,intent(in) :: nslices,sweepNum,subsweepNum
+character(len=100) :: fileName
+   write(filename,"('links',4I3.3,'beta',F4.2,'nslices',I3.3,'Sweep',I7.7,'Subsweep',I7.7,'.dat')") nx,ny,nz,nt,beta,nslices,sweepNum,subsweepNum
    open(unit=1,status='replace',file=filename,form='unformatted')
    write(1) U 
    close(1)

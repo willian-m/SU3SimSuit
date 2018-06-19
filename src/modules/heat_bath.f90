@@ -11,7 +11,7 @@
 !==============================
 module heat_bath
 use types_params
-use lattice, only : increment_table
+use lattice, only : increment_table, pos
 use math, only : SU3mult,SU2mult,detSU2_like,subgroup,embed_in_SU3,SU3_dagger,SU3projector,invert_3x3_complex,SU3_ReTr
 use objects, only : compute_staple
 implicit none
@@ -23,17 +23,16 @@ implicit none
 
 !==============================
 !List of public variables
-
+integer :: n_slices
 !List private variables
 type(SU3) :: staple !Staple of the links to be updated
 type(SU3) :: W !Mean field variable
 !==============================
 
 private
-public heat_bath_method
+public heat_bath_method, heat_bath_method_freezed_slices, n_slices
 
 contains
-
 !==============================
 !Executes the heat bath hit on the entire lattice
 subroutine heat_bath_method
@@ -45,6 +44,31 @@ do i=0,nx*ny*nz*nt-1
    end do
 end do
 end subroutine heat_bath_method
+!==============================
+
+
+!==============================
+!Executes the heat bath hit on the entire lattice
+subroutine heat_bath_method_freezed_slices
+integer :: d,x,y,z,t,i,core_size
+
+core_size = nt/n_slices
+
+do t=1,nt
+   if (mod(t,core_size) .ne. 0) then
+      do z=1,nz
+         do y=1,ny
+            do x=1,nx
+               do d=2,8,2
+                  i = pos(x,y,z,t)
+                  call heat_bath_hit(d,i)
+               end do
+            end do
+         end do
+      end do
+   end if
+end do
+end subroutine heat_bath_method_freezed_slices
 !==============================
 
 !==============================
