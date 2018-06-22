@@ -41,7 +41,7 @@ integer :: levi_civita(3,3,3) = reshape((/0,0,0, & !i=1,j=1
 
 private
 public gen_su3_element,SU3mult,SU2mult,detSU2_like,SU3_dagger,SU3_ReTr,embed_in_SU3,subgroup
-public SU3projector,is_not_SU3,invert_3x3_complex
+public SU3projector,is_not_SU3,invert_3x3_complex,SU3_Tr
 contains
 
 !==============================
@@ -195,6 +195,15 @@ type(SU3), intent(in) :: V
 integer :: i
 SU3_ReTr = real(V%a(1,1)) + real(V%a(2,2)) + real(V%a(3,3))
 end function SU3_ReTr
+!==============================
+
+!==============================
+!Takes the trace of a SU(3) matrix
+complex(dp) function SU3_Tr(V)
+type(SU3), intent(in) :: V
+integer :: i
+SU3_Tr = V%a(1,1) + V%a(2,2) + V%a(3,3)
+end function SU3_Tr
 !==============================
 
 !==============================
