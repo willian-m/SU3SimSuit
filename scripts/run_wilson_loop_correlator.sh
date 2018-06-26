@@ -3,31 +3,23 @@ LC_NUMERIC=en_US.utf-8 #Needed to avoid user locale using a comma as decimal sep
 
 #This script assumes it is being run from inside the project root directory
 DIR=`pwd`
-#--------------------------------------------
-Ns=$1
-Nt=$2
-BETA=$3
-COUNTER=$4
-ENDCOUNTER=$5
-STEP=$6
-
-
-Nsf=`printf '%03d' $Ns`
-Ntf=`printf '%03d' $Nt`
-BETAf=`printf '%.2f' $BETA`
-filePath=$DIR/output/lat_conf/links"$Nsf""$Nsf""$Nsf""$Ntf"beta"$BETAf"Sweep
+DIM1=$1
+DIR1=$2
+DIM2=$3
+DIR2=$4
 
 #--------------------------------------------
-cd $DIR/output
-echo "#Avrg plaquette" > avrg_plaquette.out
-while [  $COUNTER -le $ENDCOUNTER ]; do #For each configuration
-   COUNTERf=`printf '%09d' $COUNTER`
-   $DIR/bin/avrg_plaquette.run $Ns $Ns $Ns $Nt $filePath$COUNTERf.dat >> avrg_plaquette.out
-   if [ $? -eq "1" ]; then
-      echo  "Something went terribly wrong!!!"
-      break
-   fi
-   echo "Computation for average plaquette in configuration "$COUNTER" finished."
-   let COUNTER=COUNTER+STEP
+filePath=$DIR/output/lat_conf
+
+#--------------------------------------------
+cd $filePath
+for filename in links*.dat; do
+   Ns=`echo $filename | sed -r 's/[^0-9]*([0-9]{3}).*/\1/'`
+   Nt=`echo $filename | sed -r 's/[^0-9]*([0-9]{3}){4}.*/\1/'`
+   Nslices=`echo $filename | sed -r 's/.*nslices([0-9]{3}).*/\1/'`
+   SWEEP=`echo $filename | sed -r 's/.*Sweep([0-9]{7}).*/\1/'`
+   echo $Ns $Nt $Nslices $SWEEP $filename
+   #$DIR/bin/wilson_loop_correlation.run $Ns $Ns $Ns $Nt $Nslices $DIM1 $DIR1 $DIM2 $SIR2 $filename
+   #cp WilsonCorr_nt$Nt.dat `echo WilsonCorr_nt$(echo $Nt)_nslices$(echo $Nslices)_Sweep$(echo $SWEEP).dat`
 done
 cd $DIR

@@ -35,18 +35,18 @@ public plaquette,compute_staple,wilson_loop
 contains
 !==============================
 !Returns plaquette U_{mu,nu}(x)
-subroutine wilson_loop(dir1,size_dir_1,dir2,size_dir_2,x_start,wilson)
-   integer, intent(in) :: dir1,size_dir_1,dir2,size_dir_2,x_start
+subroutine wilson_loop(dir1,size_dir_1,dir2,size_dir_2,x,wilson)
+   integer, intent(in) :: dir1,size_dir_1,dir2,size_dir_2,x
    type(SU3),intent(out) :: wilson
-   integer :: x,x1,dir1_minus,dir2_minus,i
+   integer :: x1,dir1_minus,dir2_minus,i
    type(SU3) :: U_temp1,U_temp2
-
+   
    !Perform the first leg of the wilson loop
    x1 = x + increment_table(x,dir1)
    U_temp1 = U(dir1,x)
    dir1_minus =  dir1+2*mod(dir1,2)-1
    dir2_minus =  dir2+2*mod(dir2,2)-1
-
+   
    do i=1,size_dir_1-1
       call SU3mult(U_temp1,U(dir1,x1),U_temp2)
       

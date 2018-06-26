@@ -25,8 +25,21 @@ endif
 
 
 ifeq ($(FC),gfortran)
-MKL_LINK=-L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_rt -lpthread -lm -ldl
+
+ifeq ($(MODE),D)
+FFLAGS=-ffree-line-length-none -g -O0
+endif
+
+ifeq ($(MODE),R)
 FFLAGS=-ffree-line-length-none
+endif
+
+ifeq ($(MODE),P)
+FFLAGS=-ffree-line-length-none
+endif
+
+MKL_LINK=-L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_rt -lpthread -lm -ldl
+
 endif
 
 all: gen_lat_conf.run avrg_plaquette.run wilson_loop_correlation.run
@@ -53,7 +66,7 @@ $(BIN)/%.o: $(MODULES)/%.f90
 clean:
 	rm -f $(BIN)/*.o $(BIN)/*.mod $(BIN)/*.run
 	rmdir $(BIN)
-	rm -rf output
+#	rm -rf output
 
 
 sandwich:
