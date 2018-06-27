@@ -62,7 +62,6 @@ print*, "Beta:", beta
 
 !Initialize the lattice according to user request
 call init_lattice(lattice_file)
-call write_lattice(0,0,0)
 
 !Thermalizes the lattice
 do n=1,therm
