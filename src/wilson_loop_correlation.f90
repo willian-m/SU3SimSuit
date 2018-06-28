@@ -85,11 +85,11 @@ program wilson_loop_correlation
                         do t2=1,block_size-1
                             if (b2 .gt.  b1) then !s stores the distance between time-slices. This depends if b1 > b2 or otherwise
                                 s = t2 - t1 + block_size*(b2-b1)
-                                corr_func(s,sweep) = corr_func(s,sweep) + WL(t2,b2)*WL(t1,b1)
+                                corr_func(s,sweep) = corr_func(s,sweep) + conjg(WL(t2,b2))*WL(t1,b1)
                                 counter(s) = counter(s) + 1
                             else if (b1 .gt. b2) then
                                 s = t1 - t2 + block_size*(b1-b2)
-                                corr_func(s,sweep) = corr_func(s,sweep) + WL(t2,b2)*WL(t1,b1)
+                                corr_func(s,sweep) = corr_func(s,sweep) + WL(t2,b2)*conjg(WL(t1,b1))
                                 counter(s) = counter(s) + 1
                             end if
                         end do
