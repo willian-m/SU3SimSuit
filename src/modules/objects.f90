@@ -12,7 +12,7 @@
 module objects
 use types_params
 use lattice, only : increment_table
-use math, only : SU3mult
+use math, only : SU3mult,SU3_dagger,SU3_Tr
 implicit none
 
 !==============================
@@ -30,7 +30,7 @@ implicit none
 !==============================
 
 private
-public plaquette,compute_staple
+public plaquette,compute_staple,Tmunu
 
 contains
 
@@ -107,5 +107,101 @@ subroutine compute_staple(d,x,staple)
 end subroutine compute_staple
 !==============================
 
+!==============================
+!Compute a clover = Q_{mu nu}(x)
+subroutine clover(mu, nu, x, Q)
+    type(SU3), intent(out) :: Q
+    integer, intent(in) :: mu,nu,x
+    integer :: negative_mu,negative_nu
+    type(SU3) :: aux
+    
+    negative_mu = mu+2*mod(mu,2)-1
+    negative_nu = nu+2*mod(nu,2)-1
+
+    call plaquette(mu,nu,x,Q)
+    call plaquette(nu,negative_mu,x,aux)
+    Q%a = Q%a + aux%a
+    call plaquette(negative_mu,negative_nu,x,aux)
+    Q%a = Q%a + aux%a
+    call plaquette(negative_nu,mu,x,aux)
+    Q%a = Q%a + aux%a
+
+end subroutine clover
+!==============================
+
+!==============================
+!Compute tensor Fmunu
+subroutine Fmunu(mu, nu, x, F)
+    type(SU3), intent(out) :: F
+    integer, intent(in) :: mu,nu,x
+    type(SU3) :: aux
+    
+    !From here on, it does not make sense to consider negative directions, 
+    !thus we check all directions are positive
+
+    if(mod(mu,2) .ne. 0 .or. mod(nu,2) .ne. 0) then
+        print *, "ERROR! Computing F_{mu nu} for negative directions. Aborting!"
+        call EXIT(-2)
+    else
+        call clover(mu,nu,x,F)
+    end if
+
+    !Now we take the dagger
+    call SU3_dagger(F,aux)
+
+    !Compute ia^2F_{mu nu}
+    F%a = (F%a - aux%a)/cmplx(8.0_dp,0.0_dp)
+    
+end subroutine Fmunu
+!==============================
+
+!==============================
+!Compute tensor Tmunu
+subroutine Tmunu(x, T)
+    complex(dp), intent(out) :: T(4,4)
+    integer, intent(in) :: x
+    type(SU3) :: F(4,4), aux
+    integer :: rho,sigma,mu,nu
+    complex(dp) :: diag_term
+
+    !Compute the upper triangle of F_{\mu \nu} (without diagonals, since it is 0 and we do not use them)
+    !And fill the lower triangle with the negative of the result
+    do rho=2,8,2
+        do sigma=rho+2,8,2
+            call Fmunu(rho,sigma,x,F(sigma/2,rho/2))
+            F(rho/2,sigma/2)%a = -F(sigma/2,rho/2)%a
+        end do
+    end do
+
+    !Compute the upper triangle tensor components (including diagonals)
+    T=CMPLX(0.0_dp,0.0_dp)
+    do mu=1,4
+        do nu=mu,4
+            do sigma=1,4
+                if (mu .ne. sigma .or. nu .ne. sigma) then !We skip diagonals terms of F_{mu nu}, since it is zero
+                    call SU3mult(F(mu,sigma),F(nu,sigma),aux)
+                    T(nu,mu) = T(nu,mu) - 2.0_dp*SU3_Tr(aux) !The negative sign compensates the missing i on F_{mu nu}
+                end if
+            end do
+            T(mu,nu) = T(nu,mu) !Populate the lower triangle components, using its symmetry
+        end do
+    end do
+
+    !Compute the global term that will be subtracted from diagonal
+    diag_term = CMPLX(0.0_dp,0.0_dp)
+    do rho=1,4
+        do sigma=rho+1,4
+            call SU3mult(F(sigma,rho),F(sigma,rho),aux)
+            diag_term = diag_term - 2.0_dp*SU3_Tr(aux)
+        end do
+    end do
+
+    !Subtract it from the diagonal terms
+    do mu=1,4
+        T(mu,mu) = T(mu,mu) - diag_term/4.0_dp
+    end do
+    
+end subroutine Tmunu
+!==============================
 
 end module objects
