@@ -12,5 +12,5 @@ STEP=$5
 mkdir -p $DIR/output
 mkdir -p $DIR/output/lat_conf
 cd $DIR/output/lat_conf
-$DIR/bin/gen_lat_conf.run $Ns $Ns $Ns $Nt $BETA H $NMC $STEP 
+$DIR/bin/gen_lat_conf.run $Ns $Ns $Ns $Nt $BETA C $NMC $STEP 
 cd $DIR

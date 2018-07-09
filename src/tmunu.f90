@@ -11,6 +11,7 @@ implicit none
 character(len=1024) :: filename = ''
 complex(dp), allocatable, dimension(:,:) :: Tmunu
 integer :: record_len,x,nw,mu,nu
+
 !Load parameters (lattice size and lattice file name)
 call readArgs() 
 
@@ -23,13 +24,14 @@ call init_lattice(lattice_file)
 allocate(Tmunu(4,4))
 
 !We compute and output the data
+
 inquire(iolength=record_len) Tmunu(1,1)
 open(newunit=nw,file="Tmunu.dat",form="unformatted",access='direct',recl=record_len)
 do x=0,nx*ny*nz*nt-1
    call CalcTmunu(x,Tmunu)
    do mu=1,4
       do nu=1,4
-         write(nw,rec=nu + 4*(mu-1) + 16*x) Tmunu(nu,mu)
+        write(nw,rec=nu + 4*(mu-1) + 16*x) Tmunu(nu,mu)
       end do
    end do
 end do

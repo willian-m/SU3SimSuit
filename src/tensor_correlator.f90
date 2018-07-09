@@ -12,7 +12,7 @@ integer :: record_len,x,nw,number_of_files,unit_list_files,x1,x2,mu,nu,rho,sigma
 call readargs() 
 
 !allocate vector that will hold tmunu
-allocate(tmunu(4,4,nx*ny*nz*nt))
+allocate(tmunu(4,4,0:nx*ny*nz*nt-1))
 allocate(corr(4,4,4,4,0:nt-1))
 
 corr = CMPLX(0.0_dp,0.0_dp)
@@ -24,14 +24,14 @@ inquire(iolength=record_len) Tmunu(1,1,1)
 !for each file
 do file_num=1,number_of_files
     !read filename
-    read(unit_list_files,*) filename
+    filename=''
+    read(unit_list_files,'(A)') filename
     !Open file
     open(newunit=nw,file=filename,form="unformatted",access='direct',recl=record_len)
     !We load the file to memory
     do x=0,nx*ny*nz*nt-1
         do mu=1,4
             do nu=1,4
-                print *, nu + 4*(mu-1) + 16*x, filename, list_of_files
                 read(nw,rec=nu + 4*(mu-1) + 16*x) Tmunu(nu,mu,x)
             end do
         end do
@@ -67,6 +67,7 @@ do file_num=1,number_of_files
     close(unit_list_files)
 end do
 
+print *, "Corr computed"
 !Normalization: 
 corr = corr/(real(nt*number_of_files)*real(nx*ny*nz)**2)
 

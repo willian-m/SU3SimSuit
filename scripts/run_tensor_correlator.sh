@@ -18,9 +18,13 @@ Ns=`echo $filename | sed -r 's/[^0-9]*([0-9]{3}).*/\1/'`
 Nt=`echo $filename | sed -r 's/[^0-9]*([0-9]{3}){4}.*/\1/'`
 
 #Create list of files and count them
-ls $filepath > $DIR/output/list_files.in
+find $filepath/* -name *.dat> $DIR/output/list_files.in
+
 NUM_FILES=`wc -l $DIR/output/list_files.in | sed -r 's/([0-9]*).*/\1/'`
 
+
+cd $DIR/output
 #Finally, we execute the program
 $DIR/bin/tensor_correlator.run $Ns $Ns $Ns $Nt $DIR/output/list_files.in $NUM_FILES
-rm $filepath list_files.in
+#rm $DIR/output/list_files.in
+cd $DIR
