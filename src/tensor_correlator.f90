@@ -7,7 +7,7 @@ use types_params
 implicit none
 character(len=1024) :: filename,list_of_files
 complex(dp), allocatable :: Tmunu(:,:,:), corr(:,:,:,:,:)
-integer :: record_len,x,nw,number_of_files,unit_list_files,x1,x2,mu,nu,rho,sigma,t,k,s1,s2,file_num,t1,t2
+integer :: record_len,x,nw,number_of_files,unit_list_files,x1,x2,mu,nu,rho,sigma,t,k,s1,s2,file_num
 !load parameters (lattice size and lattice file name)
 call readargs() 
 
@@ -42,19 +42,33 @@ do file_num=1,number_of_files
     !Thus, we average over space.
     !Also, since this is a first run, I am not worried about errors. Later I need to implement
     !a more robust method, eg binned jacknife
-    do t=1,nt
+    do t=0,nt-1
         do k=0,nt-1
-            do s1=1,nx*ny*nz
-                do s2=1,nx*ny*nz
-                    x1 = s1 + t1*nx*ny*nz
+            do s1=0,nx*ny*nz-1
+                do s2=0,nx*ny*nz-1
+                    x1 = s1 + t*nx*ny*nz
                     x2 = s2 + (t+k -nt*((k+t)/nt))*nx*ny*nz
                     do nu=1,4
                         do mu=1,4
                             do sigma=1,4
                                 do rho=1,4
-                                    t1=x1/(nx*ny*nz)
-                                    t2=x2/(nx*ny*nz)
-                                    corr(rho,sigma,mu,nu,t2-t1) = corr(rho,sigma,mu,nu,abs(t1-t2)) + Tmunu(mu,nu,x1)*Tmunu(rho,sigma,x2)
+                                    if (k .lt. 0) then
+                                        print *, "Found k < 0"
+                                        print *, rho,sigma,mu,nu,t,k,x1,x2
+                                    end if
+                                    if (k .gt. nt-1) then
+                                        print *, "Found k gt nt-1"
+                                        print *, rho,sigma,mu,nu,t,k,x1,x2
+                                    end if
+                                    if (x1 .gt. nx*ny*nz*nt -1) then
+                                        print *, "Found x1 bigger thatn the lattice"
+                                        print *, rho,sigma,mu,nu,t,k,x1,x2
+                                    end if
+                                    if (x2 .gt. nx*ny*nz*nt -1) then
+                                        print *, "Found x2 bigger thatn the lattice"
+                                        print *, rho,sigma,mu,nu,t,k,x1,x2
+                                    end if
+                                    corr(rho,sigma,mu,nu,k) = corr(rho,sigma,mu,nu,k) + Tmunu(mu,nu,x1)*Tmunu(rho,sigma,x2)
                                 end do
                             end do
                         end do
@@ -63,9 +77,9 @@ do file_num=1,number_of_files
             end do
         end do
     end do
-
-    close(unit_list_files)
+    print *, "Correlation for file ",trim(filename)," completed."
 end do
+close(unit_list_files)
 
 print *, "Corr computed"
 !Normalization: 
