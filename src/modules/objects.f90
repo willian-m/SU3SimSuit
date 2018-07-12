@@ -149,8 +149,8 @@ subroutine Fmunu(mu, nu, x, F)
     !Now we take the dagger
     call SU3_dagger(F,aux)
 
-    !Compute ia^2F_{mu nu}
-    F%a = (F%a - aux%a)/cmplx(8.0_dp,0.0_dp)
+    !Compute a^2F_{mu nu}
+    F%a = (F%a - aux%a)/cmplx(0.0_dp,8.0_dp)
     
 end subroutine Fmunu
 !==============================
@@ -180,7 +180,7 @@ subroutine Tmunu(x, T)
             do sigma=1,4
                 if (mu .ne. sigma .or. nu .ne. sigma) then !We skip diagonals terms of F_{mu nu}, since it is zero
                     call SU3mult(F(mu,sigma),F(nu,sigma),aux)
-                    T(nu,mu) = T(nu,mu) - 2.0_dp*SU3_Tr(aux) !The negative sign compensates the missing i on F_{mu nu}
+                    T(nu,mu) = T(nu,mu) + 2.0_dp*SU3_Tr(aux)
                 end if
             end do
             T(mu,nu) = T(nu,mu) !Populate the lower triangle components, using its symmetry
@@ -192,7 +192,7 @@ subroutine Tmunu(x, T)
     do rho=1,4
         do sigma=rho+1,4
             call SU3mult(F(sigma,rho),F(sigma,rho),aux)
-            diag_term = diag_term - 2.0_dp*SU3_Tr(aux)
+            diag_term = diag_term + 2.0_dp*SU3_Tr(aux)
         end do
     end do
 
