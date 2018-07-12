@@ -17,7 +17,6 @@ allocate(tmunu(4,4,0:nx*ny*nz*nt-1))
 allocate(corr(0:nt-1))
 
 corr = CMPLX(0.0_dp,0.0_dp)
-print *, corr
 open(newunit=unit_list_files,file=list_of_files)
 
 !open file with list of data filenames
@@ -49,21 +48,22 @@ do file_num=1,number_of_files
             t2 = t + k - nt*((t+k)/nt)
             s1=nx*ny*nz/8
             s2=s1
-            !do s1=0,nx*ny*nz-1
-            !    do s2=0,nx*ny*nz-1
+            do s1=0,nx*ny*nz-1
+                do s2=0,nx*ny*nz-1
                     x1 = s1 + t*nx*ny*nz
                     x2 = s2 + t2*nx*ny*nz
-                    if (real(Tmunu(mu,nu,x1)) .lt. 0.0_dp .or. real(Tmunu(rho,sigma,x2)) .lt. 0.0_dp) then
-                        print *, t,x1,t2,x2,real(Tmunu(mu,nu,x1)),real(Tmunu(rho,sigma,x2))
-                    end if
-                    if (abs(imag(Tmunu(mu,nu,x1))) .gt. 1.0e-15_dp  .or. abs(imag(Tmunu(rho,sigma,x2))) .gt. 1.0e-15_dp ) then
-                        print *, "Error! Found complex tensor. Results unreliable. Aborting."
-                        call exit(-1)
-                    else
+                    !if (real(Tmunu(mu,nu,x1)) .lt. 0.0_dp .or. real(Tmunu(rho,sigma,x2)) .lt. 0.0_dp) then
+                    !    print *, t,x1,t2,x2,real(Tmunu(mu,nu,x1)),real(Tmunu(rho,sigma,x2))
+                    !end if
+                    !if (abs(imag(Tmunu(mu,nu,x1))) .gt. 1.0e-15_dp  .or. abs(imag(Tmunu(rho,sigma,x2))) .gt. 1.0e-15_dp ) then
+                    !    print *, "Error! Found complex tensor. Results unreliable. Aborting."
+                    !    call exit(-1)
+                    !else
+                    !    print *, k,mu,nu,x1,rho,sigma,x2,real(Tmunu(mu,nu,x1)),real(Tmunu(rho,sigma,x2))
                         corr(k) = corr(k) + real(Tmunu(mu,nu,x1))*real(Tmunu(rho,sigma,x2))
-                    end if
-            !    end do
-            !end do
+                    !end if
+                end do
+            end do
         end do
     end do
     print *, "Correlation for file ",trim(filename)," completed."

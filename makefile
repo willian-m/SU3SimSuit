@@ -10,7 +10,7 @@ MODE=D
 ifeq ($(FC),ifort)
 
 ifeq ($(MODE),D)
-FFLAGS=-heap-arrays 4096 -O0 -g -traceback -check all -ftrapuv -gen-interfaces -warn interfaces    
+FFLAGS=-heap-arrays 4096 -O0 -g -traceback -check all -ftrapuv -gen-interfaces -warn interfaces `$(SRC)/lib/FoX/FoX-config` 
 endif
 
 ifeq ($(MODE),R)

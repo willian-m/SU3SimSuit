@@ -39,10 +39,7 @@ module xml_parser
         type(dictionary_t), intent(in) :: atts
     
         select case (name)
-            case('lattice')
-                print*, "Entered lattice"
             case('nx')
-                print *, "Enetered nx"
                 in_nx = .true.
             case('ny')
                 in_ny = .true.

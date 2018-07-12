@@ -12,20 +12,20 @@ filepath=$DIR/output/tmunu
 cd $filepath
 mkdir -p $filepath/pre_therm
 mkdir -p $filepath/measurements_workspace
-for file in  `find $filepath -name \*.dat | head -n $THERM`; do
+for file in  `find $filepath -maxdepth 1 -name \*.dat | sort | head -n $THERM`; do
    mv $file $filepath/pre_therm
 done
-for file in  `find $filepath -name \*.dat | head -n $MEAS`; do
+for file in  `find $filepath -maxdepth 1 -name \*.dat | sort | head -n $MEAS`; do
    ln -s $file $filepath/measurements_workspace
 done
 
 #Gets lattice dimension
-filename=`ls $DIR/output/lat_conf/ | head -n 1`
-Ns=`echo $filename | sed -r 's/[^0-9]*([0-9]{3}).*/\1/'`
-Nt=`echo $filename | sed -r 's/[^0-9]*([0-9]{3}){4}.*/\1/'`
+#filename=`ls $DIR/output/lat_conf/ | head -n 1`
+#Ns=`echo $filename | sed -r 's/[^0-9]*([0-9]{3}).*/\1/'`
+#Nt=`echo $filename | sed -r 's/[^0-9]*([0-9]{3}){4}.*/\1/'`
 
 #Create list of files and count them
-find $filepath/measurements_workspace/* -name \*.dat > $DIR/output/list_files.in
+find $filepath/measurements_workspace/* -name \*.dat | sort > $DIR/output/list_files.in
 
 NUM_FILES=`wc -l $DIR/output/list_files.in | sed -r 's/([0-9]*).*/\1/'`
 
