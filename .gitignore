@@ -22,3 +22,6 @@ output/*
 #as well as builds
 **/.vs/*
 vs_project_files/**/x64/*
+
+#Ignore lib folder, which contains thirdy-party libraries
+src/lib/*

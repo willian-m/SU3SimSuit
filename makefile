@@ -1,5 +1,6 @@
-BIN=bin
-SRC=src
+PWD=$(shell pwd)
+BIN=$(PWD)/bin
+SRC=$(PWD)/src
 MODULES=$(SRC)/modules
 FC=gfortran
 
@@ -17,7 +18,7 @@ FFLAGS=-heap-arrays 4096 -O3 -xHost -fp-model precise #fp-model precise may slow
 endif
 
 ifeq ($(MODE),P)
-FFLAGS=-p -heap-arrays 4096
+FFLAGS=-p -heap-arrays 4096 `$(SRC)/lib/FoX/FoX-config`
 endif
 
 MKL_LINK=-mkl
@@ -26,7 +27,7 @@ endif
 
 ifeq ($(FC),gfortran)
 MKL_LINK=-L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_rt -lpthread -lm -ldl
-FFLAGS=-ffree-line-length-none
+FFLAGS=-ffree-line-length-none `$(SRC)/lib/FoX/FoX-config`
 endif
 
 all: gen_lat_conf.run avrg_plaquette.run tmunu.run tensor_correlator.run
@@ -44,9 +45,9 @@ OBJ_TMUNU=$(OBJ_AVRG_PLAQUETTE)
 tmunu.run: dir $(OBJ_TMUNU) $(SRC)/tmunu.f90
 	$(FC) $(FFLAGS) -I$(BIN) $(OBJ_TMUNU) $(SRC)/tmunu.f90 -o $(BIN)/$@
 
-OBJ_TENSOR_CORRELATOR=$(BIN)/types_params.o
-tensor_correlator.run: dir $(OBJ_TMUNU) $(SRC)/tmunu.f90
-	$(FC) $(FFLAGS) -I$(BIN) $(OBJ_TENSOR_CORRELATOR) $(SRC)/tensor_correlator.f90 -o $(BIN)/$@
+OBJ_TENSOR_CORRELATOR=$(BIN)/types_params.o $(BIN)/xml_parser.o
+tensor_correlator.run: dir $(OBJ_TENSOR_CORRELATOR) $(SRC)/tmunu.f90
+	$(FC) $(FFLAGS) -I$(BIN) $(OBJ_TENSOR_CORRELATOR) `$(SRC)/lib/FoX/FoX-config` $(SRC)/tensor_correlator.f90 -o $(BIN)/$@
 
 
 dir: 

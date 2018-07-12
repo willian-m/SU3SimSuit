@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<input_parameters> <!--Wrapping tag because xml only accepts one root-->
+    <lattice>
+        <nx>8</nx>
+        <ny>8</ny>
+        <nz>8</nz>
+        <nt>12</nt>
+        <beta>5.70</beta>
+    </lattice>
+    <ensamble>
+        <latt_init>H</latt_init>
+        <number_MC_steps>10000</number_MC_steps>
+        <thermalization>100</thermalization>
+        <measurement_step>10</measurement_step>
+    </ensamble>
+    <EMT_correlation>
+        <mu>1</mu>
+        <nu>2</nu>
+        <rho>1</rho>
+        <sigma>2</sigma>
+    </EMT_correlation>
+</input_parameters>

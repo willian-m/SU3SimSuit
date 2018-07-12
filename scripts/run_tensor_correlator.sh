@@ -31,11 +31,7 @@ NUM_FILES=`wc -l $DIR/output/list_files.in | sed -r 's/([0-9]*).*/\1/'`
 
 cd $DIR/output
 #Finally, we execute the program
-$DIR/bin/tensor_correlator.run $Ns $Ns $Ns $Nt $DIR/output/list_files.in $NUM_FILES
-
-#echo $Ns $Ns $Ns $Nt $DIR/output/list_files.in $NUM_FILES
-#cat $DIR/output/list_files.in
-
+$DIR/bin/tensor_correlator.run $DIR/input.xml $DIR/output/list_files.in $NUM_FILES
 
 #Reorganizes source dir
 for file in `find $filepath/pre_therm/ -name \*.dat`; do

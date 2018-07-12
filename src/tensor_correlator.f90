@@ -4,10 +4,11 @@
 
 program tmunu_corr
 use types_params
+use xml_parser, only : read_xml,mu,nu,rho,sigma
 implicit none
 character(len=1024) :: filename,list_of_files
 complex(dp), allocatable :: Tmunu(:,:,:), corr(:,:,:,:,:)
-integer :: record_len,x,nw,number_of_files,unit_list_files,x1,x2,mu,nu,rho,sigma,t,k,s1,s2,file_num
+integer :: record_len,x,nw,number_of_files,unit_list_files,x1,x2,t,k,s1,s2,file_num,t2
 !load parameters (lattice size and lattice file name)
 call readargs() 
 
@@ -44,35 +45,12 @@ do file_num=1,number_of_files
     !a more robust method, eg binned jacknife
     do t=0,nt-1
         do k=0,nt-1
+            t2 = t + k - nt*((t+k)/nt)
             do s1=0,nx*ny*nz-1
                 do s2=0,nx*ny*nz-1
                     x1 = s1 + t*nx*ny*nz
                     x2 = s2 + (t+k -nt*((k+t)/nt))*nx*ny*nz
-                    do nu=1,4
-                        do mu=1,4
-                            do sigma=1,4
-                                do rho=1,4
-                                    if (k .lt. 0) then
-                                        print *, "Found k < 0"
-                                        print *, rho,sigma,mu,nu,t,k,x1,x2
-                                    end if
-                                    if (k .gt. nt-1) then
-                                        print *, "Found k gt nt-1"
-                                        print *, rho,sigma,mu,nu,t,k,x1,x2
-                                    end if
-                                    if (x1 .gt. nx*ny*nz*nt -1) then
-                                        print *, "Found x1 bigger thatn the lattice"
-                                        print *, rho,sigma,mu,nu,t,k,x1,x2
-                                    end if
-                                    if (x2 .gt. nx*ny*nz*nt -1) then
-                                        print *, "Found x2 bigger thatn the lattice"
-                                        print *, rho,sigma,mu,nu,t,k,x1,x2
-                                    end if
-                                    corr(rho,sigma,mu,nu,k) = corr(rho,sigma,mu,nu,k) + Tmunu(mu,nu,x1)*Tmunu(rho,sigma,x2)
-                                end do
-                            end do
-                        end do
-                    end do
+                    corr(rho,sigma,mu,nu,k) = corr(rho,sigma,mu,nu,k) + Tmunu(mu,nu,x1)*Tmunu(rho,sigma,x2)
                 end do
             end do
         end do
@@ -85,47 +63,41 @@ print *, "Corr computed"
 !Normalization: 
 corr = corr/(real(nt*number_of_files)*real(nx*ny*nz)**2)
 
-!Finally, we save the file
-do nu=1,4
-    do mu=1,4
-        do sigma=1,4
-            do rho=1,4
-                write(filename,'("Corr",4I1.1,".dat")') mu,nu,rho,sigma
-                open(newunit=nw,file=filename)
-                do t=0,nt-1
-                    write(nw,*) t, corr(mu,nu,rho,sigma,t)
-                end do
-                close(nw)
-            end do
-        end do
-    end do
+mu=4
+nu=1
+rho=mu
+sigma=nu
+corr(rho,sigma,mu,nu,k) = corr(rho,sigma,mu,nu,k) + Tmunu(mu,nu,x1)*Tmunu(rho,sigma,x2)
+
+write(filename,'("Corr",4I1.1,".dat")') mu,nu,rho,sigma
+open(newunit=nw,file=filename)
+do t=0,nt-1
+    write(nw,*) t, real(corr(mu,nu,rho,sigma,t)), imag(corr(mu,nu,rho,sigma,t))
 end do
+close(nw)
 
 deallocate(tmunu,corr)
 
 contains
    subroutine readargs()
-      integer, parameter :: minnumberparameters = 5
-      character(len=50) :: argnx,argny,argnz,argnt,arg_number_of_files
-      if(command_argument_count() .lt. minnumberparameters) then
-         print*, "it is mandatory to pass 5 arguments in the format"
-         print*, "nx ny nz nt path/to/lattice/file"
+      
+      integer, parameter :: min_number_parameters = 3
+      character(len=1024) :: input_xml
+      character(len=50) :: arg_number_of_files
+      if(command_argument_count() .ne. min_number_parameters) then
+         print*, "it is mandatory to pass 3 arguments in the format"
+         print*, "xml/input/file list/of/files/to/average number_of_lines_of_previous files"
          print*, "exiting now"
          call exit(1)
       else
-      
-         call get_command_argument(1,argnx)
-         call get_command_argument(2,argny)
-         call get_command_argument(3,argnz)
-         call get_command_argument(4,argnt)
-         call get_command_argument(5,list_of_files)
-         call get_command_argument(6,arg_number_of_files)
 
-         read(argnx,*) nx
-         read(argny,*) ny
-         read(argnz,*) nz
-         read(argnt,*) nt
+         call get_command_argument(1,input_xml)
+         call get_command_argument(2,list_of_files)
+         call get_command_argument(3,arg_number_of_files)
+         call read_xml(input_xml)
          read(arg_number_of_files,*) number_of_files
+
+
       end if
    end subroutine
 end program
