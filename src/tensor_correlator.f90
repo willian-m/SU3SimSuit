@@ -4,25 +4,32 @@
 
 program tmunu_corr
 use types_params
+use statistic, only : average_real, connected_correlation_real, corr_time_int
 use xml_parser, only : read_xml,mu,nu,rho,sigma
+
 implicit none
 character(len=1024) :: filename,list_of_files
-complex(dp), allocatable :: Tmunu(:,:,:), corr(:)
+complex(dp), allocatable :: Tmunu(:,:,:)
+real(dp), allocatable :: MC_corr(:,:), avrg(:), time_corr(:,:)
 integer :: record_len,x,nw,number_of_files,unit_list_files,x1,x2,t,k,s1,s2,file_num,t2,mu_prime,nu_prime
+integer, allocatable :: integrated_corr_time(:)
 !load parameters (lattice size and lattice file name)
 call readargs() 
 
 !allocate vector that will hold tmunu
 allocate(tmunu(4,4,0:nx*ny*nz*nt-1))
-allocate(corr(0:nt-1))
+allocate(time_corr(0:nt-1,number_of_files))
+allocate(MC_corr(0:nt-1,number_of_files))
+allocate(integrated_corr_time(0:nt-1))
+allocate(avrg(0:nt-1))
 
-corr = CMPLX(0.0_dp,0.0_dp)
+time_corr = CMPLX(0.0_dp,0.0_dp)
 open(newunit=unit_list_files,file=list_of_files)
 
 !open file with list of data filenames
 inquire(iolength=record_len) Tmunu(1,1,1)
 
-!for each file
+!for each file, computes the temporal correlation
 do file_num=1,number_of_files
     !read filename
     filename=''
@@ -60,7 +67,7 @@ do file_num=1,number_of_files
                     !    call exit(-1)
                     !else
                     !    print *, k,mu,nu,x1,rho,sigma,x2,real(Tmunu(mu,nu,x1)),real(Tmunu(rho,sigma,x2))
-                        corr(k) = corr(k) + real(Tmunu(mu,nu,x1))*real(Tmunu(rho,sigma,x2))
+                    time_corr(k,file_num) = time_corr(k,file_num) + real(Tmunu(mu,nu,x1))*real(Tmunu(rho,sigma,x2))
                     !end if
                 end do
             end do
@@ -70,19 +77,37 @@ do file_num=1,number_of_files
     !read(5,*)
 end do
 close(unit_list_files)
+time_corr = time_corr/real(nx*ny*nz)**2
 
-print *, "Corr computed"
-!Normalization: 
-corr = corr/(real(nt*number_of_files)*real(nx*ny*nz)**2)
+!Now starts the analysis.
+!1) For each point, compute the average and correlation
+do t=0,nt-1
+    avrg(t) =  average_real(time_corr(t,:))
+    call connected_correlation_real(time_corr(t,:),MC_corr(t,:))
+    integrated_corr_time(t) = corr_time_int(MC_corr(t,:),5)
+    !To do: computation of error estimation using binning.
+        !bin_size automatically defined by integrated_corr_time 
+end do
 
+!Save essential data
 write(filename,'("Corr",4I1.1,".dat")') mu,nu,rho,sigma
 open(newunit=nw,file=filename)
+write(nw, "(A,A,A,A)") "#t, ", "C(t), ","sigma^2/N, ","tau_int, "
 do t=0,nt-1
-    write(nw,*) t, real(corr(t)), imag(corr(t))
+    write(nw,*) t, avrg(t), MC_corr(t,0)/number_of_files, integrated_corr_time(t)
 end do
 close(nw)
 
-deallocate(tmunu,corr)
+do t=0,nt-1
+    write(filename,'("MC_Corr",4I1.1,"t=",I2.2,".dat")') mu,nu,rho,sigma
+    open(newunit=nw,file=filename)
+    write(nw,"(A,A)") "#MC_Step, ","C(MC_Step)"
+    do k=1,number_of_files
+        write(nw, *) k, MC_corr(t,k)
+    end do
+    close(nw)
+end do
+
 
 contains
    subroutine readargs()

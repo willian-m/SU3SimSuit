@@ -45,16 +45,17 @@ OBJ_TMUNU=$(OBJ_AVRG_PLAQUETTE)
 tmunu.run: dir $(OBJ_TMUNU) $(SRC)/tmunu.f90
 	$(FC) $(FFLAGS) -I$(BIN) $(OBJ_TMUNU) $(SRC)/tmunu.f90 -o $(BIN)/$@
 
-OBJ_TENSOR_CORRELATOR=$(BIN)/types_params.o $(BIN)/xml_parser.o
+OBJ_TENSOR_CORRELATOR=$(BIN)/types_params.o $(BIN)/xml_parser.o $(BIN)/statistic.o
 tensor_correlator.run: dir $(OBJ_TENSOR_CORRELATOR) $(SRC)/tmunu.f90
-	$(FC) $(FFLAGS) -I$(BIN) $(OBJ_TENSOR_CORRELATOR) `$(SRC)/lib/FoX/FoX-config` $(SRC)/tensor_correlator.f90 -o $(BIN)/$@
+	$(FC) $(FFLAGS) -I$(BIN) -I$(MKLROOT)/include  $(OBJ_TENSOR_CORRELATOR) `$(SRC)/lib/FoX/FoX-config` $(SRC)/tensor_correlator.f90 $(MKL_LINK) -o $(BIN)/$@
 
 
 dir: 
 	mkdir -p $(BIN)
 
 $(BIN)/%.o: $(MODULES)/%.f90
-	if [ $(FC) = ifort ]; then $(FC) $(FFLAGS) -c -module $(BIN) -o $@ $<; elif [ $(FC) = gfortran ]; then $(FC) $(FFLAGS) -c -J$(BIN) -o $@ $<; fi
+	ln -sf $(MKLROOT)/include/mkl_dfti.f90 $(MODULES)/mkl_dfti.f90 
+	if [ $(FC) = ifort ]; then $(FC) -I=$(MODULES) $(MKL_LINK) $(FFLAGS) -c -module $(BIN) -o $@ $<; elif [ $(FC) = gfortran ]; then $(FC) $(MKL_LINK) $(FFLAGS) -c -J$(BIN) -o $@ $<; fi
 
 clean:
 	rm -f $(BIN)/*.o $(BIN)/*.mod $(BIN)/*.run
