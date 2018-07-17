@@ -135,7 +135,6 @@ subroutine Fmunu(mu, nu, x, F)
     type(SU3), intent(out) :: F
     integer, intent(in) :: mu,nu,x
     type(SU3) :: aux
-    
     !From here on, it does not make sense to consider negative directions, 
     !thus we check all directions are positive
 
@@ -178,7 +177,7 @@ subroutine Tmunu(x, T)
     do mu=1,4
         do nu=mu,4
             do sigma=1,4
-                if (mu .ne. sigma .or. nu .ne. sigma) then !We skip diagonals terms of F_{mu nu}, since it is zero
+                if (mu .ne. sigma .and. nu .ne. sigma) then !We skip diagonals terms of F_{mu nu}, since it is zero
                     call SU3mult(F(mu,sigma),F(nu,sigma),aux)
                     T(nu,mu) = T(nu,mu) + 2.0_dp*SU3_Tr(aux)
                 end if
