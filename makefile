@@ -30,7 +30,7 @@ MKL_LINK=-L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_rt -lpthread -lm -ldl
 FFLAGS=-ffree-line-length-none `$(SRC)/lib/FoX/FoX-config`
 endif
 
-all: gen_lat_conf.run avrg_plaquette.run tmunu.run tensor_correlator.run
+all: gen_lat_conf.run avrg_plaquette.run tmunu.run tensor_correlator.run green_function_tmunu.run
 
 
 OBJ_LAT_CONF=$(BIN)/ziggurat.o $(BIN)/types_params.o $(BIN)/math.o $(BIN)/IO.o $(BIN)/lattice.o $(BIN)/objects.o $(BIN)/heat_bath.o
@@ -49,6 +49,9 @@ OBJ_TENSOR_CORRELATOR=$(BIN)/types_params.o $(BIN)/xml_parser.o $(BIN)/statistic
 tensor_correlator.run: dir $(OBJ_TENSOR_CORRELATOR) $(SRC)/tmunu.f90
 	$(FC) $(FFLAGS) -I$(BIN) -I$(MKLROOT)/include  $(OBJ_TENSOR_CORRELATOR) `$(SRC)/lib/FoX/FoX-config` $(SRC)/tensor_correlator.f90 $(MKL_LINK) -o $(BIN)/$@
 
+OBJ_GREEN_FUNCTION=$(BIN)/types_params.o $(BIN)/xml_parser.o $(BIN)/statistic.o
+green_function_tmunu.run: dir $(OBJ_TENSOR_CORRELATOR) $(SRC)/tmunu.f90
+	$(FC) $(FFLAGS) -I$(BIN) -I$(MKLROOT)/include  $(OBJ_TENSOR_CORRELATOR) `$(SRC)/lib/FoX/FoX-config` $(SRC)/green_function_tmunu.f90 $(MKL_LINK) -o $(BIN)/$@
 
 dir: 
 	mkdir -p $(BIN)
