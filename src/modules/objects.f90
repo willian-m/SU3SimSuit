@@ -180,6 +180,9 @@ subroutine Tmunu(x, T)
                 if (mu .ne. sigma .and. nu .ne. sigma) then !We skip diagonals terms of F_{mu nu}, since it is zero
                     call SU3mult(F(mu,sigma),F(nu,sigma),aux)
                     T(nu,mu) = T(nu,mu) + 2.0_dp*SU3_Tr(aux)
+                    if(isnan(real(T(nu,mu))) .or. isnan(imag(T(nu,mu))) )then
+                        print *, T(nu,mu)
+                    end if
                 end if
             end do
             T(mu,nu) = T(nu,mu) !Populate the lower triangle components, using its symmetry

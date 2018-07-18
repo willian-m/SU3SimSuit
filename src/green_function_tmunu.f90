@@ -6,7 +6,6 @@ include "mkl_dfti.f90"
 
 program tmunu_corr
 use types_params
-use MKL_DFTI
 use statistic, only : average_real, connected_correlation_real, corr_time_int
 use xml_parser, only : read_xml,mu,nu,rho,sigma
 
@@ -62,8 +61,8 @@ do file_num=1,number_of_files
         do kz=0,nz-1
             do ky=0,ny-1
                 do kx=0,nx-1
-                    k1 = 1 + kx + ky*nx + kz*nx*ny + omega*nx*ny*nz
-                    k2 = 1 + (nx+1-kx) + (ny+1-ky)*nx + (nz+1-kz)*nx*ny + (nt+1-omega)*nx*ny*nz
+                    k1 = kx + ky*nx + kz*nx*ny + omega*nx*ny*nz
+                    k2 = mod(nx-kx,nx) + mod(ny-ky,ny)*nx + mod(nz-kz,nz)*nx*ny + mod(nt-omega,nt)*nx*ny*nz
                     observable(k1,file_num)=Tmunu_FFT(k1)*Trhosigma_FFT(k2)
                 end do
             end do
@@ -128,11 +127,13 @@ contains
     end subroutine
 
     subroutine space_time_FFT(input_data,out_DFT)
+        use MKL_DFTI
         complex(dp), intent(in) :: input_data(:)
         complex(dp), intent(out) :: out_DFT(:)
         integer :: stat
         type(DFTI_DESCRIPTOR), pointer :: descHandler
    
+        !print *, input_data(1:10)
         !We need to create a DESCRIPTOR to describe the parameters of the transform
         stat = DftiCreateDescriptor( descHandler, DFTI_DOUBLE, DFTI_COMPLEX, 4, [nx, ny, nz, nt] ) 
         stat = DftiSetValue( descHandler, DFTI_FORWARD_SCALE, 1.0_dp)
