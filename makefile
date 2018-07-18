@@ -14,7 +14,7 @@ FFLAGS=-heap-arrays 4096 -O0 -g -traceback -check all -ftrapuv -gen-interfaces -
 endif
 
 ifeq ($(MODE),R)
-FFLAGS=-heap-arrays 4096 -O3 -xHost -fp-model precise #fp-model precise may slow down the code, but insures precision.
+FFLAGS=-heap-arrays 4096 -O3 -xHost -fp-model precise `$(SRC)/lib/FoX/FoX-config` #fp-model precise may slow down the code, but insures precision.
 endif
 
 ifeq ($(MODE),P)
