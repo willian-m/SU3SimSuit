@@ -14,9 +14,9 @@
         <measurement_step>10</measurement_step>
     </ensamble>
     <EMT_correlation>
-        <mu>1</mu>
-        <nu>2</nu>
-        <rho>1</rho>
-        <sigma>2</sigma>
+        <mu>4</mu>
+        <nu>1</nu>
+        <rho>4</rho>
+        <sigma>1</sigma>
     </EMT_correlation>
 </input_parameters>
