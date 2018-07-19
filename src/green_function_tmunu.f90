@@ -6,15 +6,14 @@ include "mkl_dfti.f90"
 
 program tmunu_corr
 use types_params
-use statistic, only : average_real, connected_correlation_real, corr_time_int
+use statistic, only : full_analysis_real
 use xml_parser, only : read_xml,mu,nu,rho,sigma
 
 implicit none
 character(len=1024) :: filename,list_of_files
 complex(dp), allocatable :: Tmunu(:,:,:), Tmunu_FFT(:), Trhosigma_FFT(:)
-real(dp), allocatable :: MC_corr(:,:), avrg(:), observable(:,:)
+real(dp), allocatable :: estimated_error(:), avrg(:), observable(:,:),integrated_corr_time(:)
 integer :: record_len,x,nw,number_of_files,unit_list_files,k,file_num,mu_prime,nu_prime,k1,k2,kx,ky,kz,omega
-integer, allocatable :: integrated_corr_time(:)
 !load parameters (lattice size and lattice file name)
 call readargs() 
 
@@ -22,9 +21,8 @@ call readargs()
 allocate(Tmunu(4,4,0:nx*ny*nz*nt-1))
 allocate(Tmunu_FFT(0:nx*ny*nz*nt-1),Trhosigma_FFT(0:nx*ny*nz*nt-1))
 allocate(observable(0:nx*ny*nz*nt-1,number_of_files))
-allocate(MC_corr(0:nx*ny*nz*nt-1,number_of_files))
 allocate(integrated_corr_time(0:nx*ny*nz*nt-1))
-allocate(avrg(0:nx*ny*nz*nt-1))
+allocate(avrg(0:nx*ny*nz*nt-1),estimated_error(0:nx*ny*nz*nt-1))
 
 observable = CMPLX(0.0_dp,0.0_dp)
 open(newunit=unit_list_files,file=list_of_files)
@@ -51,8 +49,6 @@ do file_num=1,number_of_files
 
     !Computes the correlation. Typically, it is displayed as a function of time only.
     !Thus, we average over space.
-    !Also, since this is a first run, I am not worried about errors. Later I need to implement
-    !a more robust method, eg binned jacknife
     call space_time_FFT(Tmunu(nu,mu,:),Tmunu_FFT)
     call space_time_FFT(Tmunu(sigma,rho,:),Trhosigma_FFT)
 
@@ -69,7 +65,7 @@ do file_num=1,number_of_files
         end do
     end do
 
-    print *, "Observable for ",trim(filename)," completed."
+!    print *, "Observable for ",trim(filename)," completed."
 end do
 close(unit_list_files)
 
@@ -77,34 +73,19 @@ close(unit_list_files)
 observable = observable/real(nx*ny*nz*nt)
 
 !Now starts the analysis.
-!1) For each point, compute the average and correlation
 do k1=0,nx*ny*nz*nt-1
-    avrg(k1) = average_real(observable(k1,:))
-    call connected_correlation_real(observable(k1,:),MC_corr(k1,:))
-    integrated_corr_time(k1) = corr_time_int(MC_corr(k1,:),5)
-    !To do: computation of error estimation using binning.
-        !bin_size automatically defined by integrated_corr_time 
+    call full_analysis_real(observable(k1,:),avrg(k1),estimated_error(k1),integrated_corr_time(k1))
 end do
 
 !Save essential data
 write(filename,'("Corr",4I1.1,".dat")') mu,nu,rho,sigma
 open(newunit=nw,file=filename)
-write(nw, "(A,A,A,A)") "#t, ", "C(t), ","sigma^2/N, ","tau_int, "
+write(nw, "(A,A,A,A)") "#t, ", "estimator, ","estimated error","integrated correlation time"
 do k1=0,nx*ny*nz*nt-1
-    
-    write(nw,*) k1, avrg(k1), MC_corr(k1,1)/number_of_files, integrated_corr_time(k1)
+    write(nw,*) k1, avrg(k1), estimated_error(k1),integrated_corr_time(k1)
 end do
 close(nw)
 
-!do k1=0,nx*ny*nznt-1
-!    write(filename,'("MC_Corr",4I1.1,"t=",I7.7,".dat")') mu,nu,rho,sigma,k1
-!    open(newunit=nw,file=filename)
-!    write(nw,"(A,A)") "#MC_Step, ","C(MC_Step)"
-!    do k=1,number_of_files
-!       write(nw, *) k, MC_corr(k1,k)
-!    end do
-!    close(nw)
-!end do
 
 
 contains
@@ -133,11 +114,10 @@ contains
         integer :: stat
         type(DFTI_DESCRIPTOR), pointer :: descHandler
    
-        !print *, input_data(1:10)
         !We need to create a DESCRIPTOR to describe the parameters of the transform
         stat = DftiCreateDescriptor( descHandler, DFTI_DOUBLE, DFTI_COMPLEX, 4, [nx, ny, nz, nt] ) 
         stat = DftiSetValue( descHandler, DFTI_FORWARD_SCALE, 1.0_dp)
-        stat = DftiSetValue( descHandler, DFTI_BACKWARD_SCALE, 1.0_dp/two_pi)
+        stat = DftiSetValue( descHandler, DFTI_BACKWARD_SCALE, 1.0_dp/(nx*ny*nz*nt)**2)
         !We do not desire to overwrite the input data
         stat = DftiSetValue( descHandler, DFTI_PLACEMENT, DFTI_NOT_INPLACE)
         !Set up the layout of the output
@@ -149,7 +129,6 @@ contains
         stat = DftiCommitDescriptor( descHandler )
 
         !Compute FFT
-        !Need to use slice, in case we are thowing away the last point
         stat = DftiComputeForward( descHandler, input_data, out_DFT)
         stat = DftiFreeDescriptor( descHandler ) !Descriptor, be free!!!
    end subroutine

@@ -22,6 +22,7 @@ module statistic
     private
     public average_real,average_complex
     public correlation_real,connected_correlation_real,corr_time_int
+    public full_analysis_real
 
     contains
 
@@ -83,7 +84,7 @@ module statistic
         !We need to create a DESCRIPTOR to describe the parameters of the transform
         stat = DftiCreateDescriptor( descHandler, DFTI_DOUBLE, DFTI_REAL, 1, n )
         stat = DftiSetValue( descHandler, DFTI_FORWARD_SCALE, 1.0_dp)
-        stat = DftiSetValue( descHandler, DFTI_BACKWARD_SCALE, 1.0_dp/two_pi)
+        stat = DftiSetValue( descHandler, DFTI_BACKWARD_SCALE, 1.0_dp/n**2)
         !We do not desire to overwrite the input data
         stat = DftiSetValue( descHandler, DFTI_PLACEMENT, DFTI_NOT_INPLACE)
         !Set up the layout of the output
@@ -100,8 +101,6 @@ module statistic
         !inp_back_FFT(1) = out_DFT(1)**2 !First element is real
         do i=1,n/2+1
             out_DFT(i) = out_DFT(i)*conjg(out_DFT(i))
-!            inp_back_FFT(i) = real(out_DFT(i)*conjg(out_DFT(i)))
-!            inp_back_FFT(n+2-i) = inp_back_FFT(i)
         end do
 
         !We can use the same descriptor, since the input is on the same shape
@@ -177,27 +176,178 @@ module statistic
     end subroutine connected_correlation_real
     !==============================
 
+    real(dp) function naive_variance(input_data)
+        real(dp), intent(in) :: input_data(:)
+        real(dp) :: avrg, avrg_of_square
+        integer :: n,i
+
+        n = size(input_data)
+
+        avrg = average_real(input_data)
+        avrg_of_square = 0.0_dp
+        do i=1,n
+            avrg_of_square = avrg_of_square + input_data(i)**2
+        end do
+        avrg_of_square = avrg_of_square/n
+
+        naive_variance = sqrt(avrg_of_square - avrg**2)
+    end function naive_variance 
+
+    !==============================
+    !Given a correlation function, computes its integrated correlation time
+    !Uses binning to estimate tau_int
+    real(dp) function corr_time_int(input_data,bin_size) result(tau)
+    real(dp), intent(in) :: input_data(:)
+    real(dp), allocatable :: binned_data(:)
+    real(dp) :: binned_variance, input_variance
+    integer, intent(in) :: bin_size
+    integer :: n,nbins,i,j
+
+    n = size(input_data)
+
+    if (bin_size .gt. n) then
+        print *, "Warning on estimation of integrated correlation time. Received a bin size bigger than the data."
+    end if    
+
+    nbins = n/bin_size
+
+    !We redefine n, to guarantee that it is a multiple of bin_size
+    !Of course, this means we possibly ignores data towards the end of the array
+    
+    n = nbins*bin_size
+
+    allocate(binned_data(nbins))
+
+    !Bins the data
+    binned_data = 0.0_dp
+    do i=1,nbins
+        do j=1,bin_size
+            binned_data(i) = binned_data(i) + input_data(j+(i-1)*bin_size)
+        end do
+    end do
+    binned_data = binned_data/real(bin_size)
+
+    !Computes the variance using the full data and the binned data
+    binned_variance = naive_variance(binned_data)
+    input_variance = naive_variance(input_data)
+    
+    tau = binned_variance/input_variance
+    end function corr_time_int
+
     !==============================
     !Given a correlation function, computes its integrated correlation time
     !Implements automatic windowing algorithm
-    integer recursive function corr_time_int(corr,m) result(tau)
-    integer, intent(in) :: m !Initial window
-    real(dp), intent(in) :: corr(:)
-    integer :: n, i
+    subroutine full_analysis_real(input_data,avrg,estimate_error,tau_int) 
+    real(dp), intent(in) :: input_data(:)
+    real(dp), intent(out) :: avrg,estimate_error,tau_int
+    complex(dp), allocatable :: out_DFT(:)
+    real(dp), allocatable :: corr(:)
+    integer :: n,i,stat,tau_exp,bin_size
+    real(dp) :: sigma2_naive
+    real(dp), parameter :: one_over_e = exp(-1.0_dp)
+    type(DFTI_DESCRIPTOR), pointer :: descHandler
 
-    n = size(corr)
-    tau = 1
-    if (m .le. n) then
-        do i=2,m
-            tau = tau + 2*(1 - real(i-1)/real(N))*corr(i)/corr(1)
+    !Auto-correlation function relies on FFT. This can be almost trivially be derived
+    !The estimation of the integrated correlation time uses the formula (4.10)
+    !from B. Berg.; Markov Chain, Monte Carlo Simulations and Their Statistical Analysis.
+    !The auto-windowing procedure comes from Sokal (1997)
+    !Relation between correlation function and sigma^2_naive can be found in formulas
+    !(4.11) with (4.6) of Berg's book. Eq. (4.11) also gives the relation between the 
+    !integrated correlation time, sigma^2_naive and the unbiased error estimnation.    
+
+    !Get the size of the data
+    n=size(input_data)
+    
+    !Check if data has even number of points. If not, throw the last point away.
+    if (mod(n,2) .ne. 0) then 
+        n = n-1
+    end if
+    
+    !Allocate vector used on FFT computations
+    allocate(out_DFT(n/2+1))
+    allocate(corr(n))
+    !allocate(inp_back_FFT(n))
+
+    !We need to create a DESCRIPTOR to describe the parameters of the transform
+    stat = DftiCreateDescriptor( descHandler, DFTI_DOUBLE, DFTI_REAL, 1, n )
+    stat = DftiSetValue( descHandler, DFTI_FORWARD_SCALE, 1.0_dp)
+    stat = DftiSetValue( descHandler, DFTI_BACKWARD_SCALE, 1.0_dp/n**2)
+    !We do not desire to overwrite the input data
+    stat = DftiSetValue( descHandler, DFTI_PLACEMENT, DFTI_NOT_INPLACE)
+    !Set up the layout of the output
+    stat = DftiSetValue( descHandler, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX)
+    !Commit descriptor!
+    stat = DftiCommitDescriptor( descHandler )
+
+    !Compute FFT
+    !Need to use slice, in case we are throwing away the last point
+    stat = DftiComputeForward( descHandler, input_data(1:n), out_DFT)
+
+    avrg = out_DFT(1)/n
+    do i=1,n/2+1
+        out_DFT(i) = out_DFT(i)*conjg(out_DFT(i))
+    end do
+
+    !We can use the same descriptor, since the input is on the same shape
+    stat = DftiComputeBackward( descHandler, out_DFT, corr)
+
+    !Finishes computing the connected correlation, by subtracting the average 
+    do i=1,n
+        corr(i) = corr(i) - avrg**2
+    end do
+    
+
+    !Naive error
+    sigma2_naive = corr(1)/N
+
+    !print *, "Estimating exponential correlation time"
+    !Estimate the exponential correlation time:
+    i=2
+    do while(corr(i-1)/corr(1) .gt. one_over_e)
+        i=i+1
+    end do
+    tau_exp = i-1
+    
+    !tau_int ~ 2*tau_exp.
+    !This is used to bin the data, such as the bins are approximatelly uncorrelated
+    bin_size = 2*tau_exp
+
+
+    !If the above bin size does not divides the data evenly, we increase it, until we find
+    !a suitable bin  
+    do while( mod(n,bin_size) .ne. 0)
+        bin_size = bin_size+1
+    end do
+
+   
+    !Computes the integrated correlation time using binning methods
+    !Check Bernd Berg book for details
+    tau_int = corr_time_int(input_data(1:n),bin_size)
+
+    !Once we have the correlation time, we estimate the error by being
+    !For now, tau_int is broken. Lets use the naive estimate
+    estimate_error = sqrt(sigma2_naive*tau_int)
+
+    !Clean up
+    stat = DftiFreeDescriptor( descHandler )
+    deallocate(out_DFT,corr)
+
+end subroutine full_analysis_real
+
+!computes the correlation function using the traditional approach, coming from its definitions
+subroutine traditional_corr(input_data,corr)
+    real(dp), intent(in) :: input_data(:)
+    real(dp), intent(out) :: corr(:)
+    integer :: n, i, j
+
+    n = size(input_data)
+    corr = 0.0_dp
+    do i=0,n-1
+        do j=1,n
+            corr(i+1) = corr(i+1) + input_data( i + j - n*((i+j-1)/n) )*input_data(j)
         end do
-    end if
-
-    if (m .lt. 10*tau ) then
-        tau = corr_time_int(corr,m+1) !If the test fails, we 
-                                      !are not in a big enough window. Increase it.
-    end if
-
-    end function corr_time_int
-
+        corr(i) = corr(i)/n
+    end do
+             
+end subroutine traditional_corr
 end module

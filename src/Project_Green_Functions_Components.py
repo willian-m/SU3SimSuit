@@ -19,19 +19,19 @@ nt=int(input_xml.getElementsByTagName('nt')[0].firstChild.nodeValue)
     
 #Load data into memory
 green_function=[]
-sigma2=[]
+sigma=[]
 int_time=[]
 for i in [1,2,3]:
     green_function.append([])
-    sigma2.append([])
+    sigma.append([])
     int_time.append([])
     for j in [1,2,3]:
         momentum=loadtxt(srcpath+'Corr4'+str(i)+'4'+str(j)+".dat",usecols=(0,),dtype=int)
         green_function[i-1].append(loadtxt(srcpath+'Corr4'+str(i)+'4'+str(j)+".dat",usecols=(1,)))
-        sigma2[i-1].append(loadtxt(srcpath+'Corr4'+str(i)+'4'+str(j)+".dat",usecols=(2,)))
-        int_time[i-1].append(loadtxt(srcpath+'Corr4'+str(i)+'4'+str(j)+".dat",usecols=(3,)))
-        for sigma in sigma2[i-1][j-1]:
-            if(sigma < 0):
+        sigma[i-1].append(loadtxt(srcpath+'Corr4'+str(i)+'4'+str(j)+".dat",usecols=(2,)))
+        #int_time[i-1].append(loadtxt(srcpath+'Corr4'+str(i)+'4'+str(j)+".dat",usecols=(3,)))
+        for s in sigma[i-1][j-1]:
+            if(s < 0):
                 raise(ValueError,"Warning! Found negative error!")
             #end if
         #end for
@@ -64,16 +64,10 @@ for k in range(len(momentum)):
         for i in range(3):
             for j in range(3):
                 L = L + p_i[i]*p_i[j]*green_function[i][j][k]/p_i[4]
-                if (int_time[i][j][k] != 0):
-                    err_L = err_L + p_i[i]*p_i[j]*sqrt(sigma2[i][j][k]*2*int_time[i][j][k])/p_i[4]
-                else:
-                    err_L = err_L + p_i[i]*p_i[j]*sqrt(sigma2[i][j][k])/p_i[4]
+                err_L = err_L + p_i[i]*p_i[j]*sigma[i][j][k]/p_i[4]
                 if(i == j):
                     T = T + green_function[i][j][k]
-                    if (int_time[i][j][k] != 0):
-                        err_T = err_T + sqrt(sigma2[i][j][k]*2*int_time[i][j][k])
-                    else:
-                        err_T = err_T + sqrt(sigma2[i][j][k])
+                    err_T = err_T + sigma[i][j][k]
                 #end if
             #end for
         #end for
