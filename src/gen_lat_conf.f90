@@ -28,6 +28,7 @@ use ziggurat, only : zigset
 use lattice, only : hot_start,lattice_file,init_lattice
 use heat_bath, only : heat_bath_method
 use IO, only : write_lattice
+use xml_parser, only : read_xml, nmc, therm, rec_step
 !==============================
 
 implicit none
@@ -38,22 +39,21 @@ implicit none
 
 !==============================
 !List of variables
-integer :: clock !Used as seed
-integer :: n,nmc
-integer :: rec_step
+integer :: clock !Used to set ziggurat seed
+integer :: n
+character(len=1024) :: xml_input_path
 !==============================
 
 !read input parameters
-call read_args(nx,ny,nz,nt,hot_start,nmc,beta,rec_step,lattice_file)
+call GET_COMMAND_ARGUMENT(1,xml_input_path)
+call read_xml(xml_input_path)
+!call read_args(nx,ny,nz,nt,hot_start,nmc,beta,rec_step,lattice_file)
 
 !Initialize ziggurat random number generator
 clock = 123
 !call system_clock(count=clock) !Uncomment to different seeds in each call
-call zigset(clock)
-!This is for the use of the native fortran random number generator
-!data seed /123456789, 987654321/
-!call random_seed(size=2,put=seed)
-call random_seed()
+call zigset(clock) !Set seed for ziggurat random number generator
+call init_random_seed !Set seed for fortran random number generator 
 
 print*, "Lattice size: ",nx,"x",ny,"x",nz,"x",nt
 print*, "Beta:", beta
@@ -64,7 +64,7 @@ call write_lattice(0)
 do n=1,nmc
    call heat_bath_method
    print *, dble(n)*100.0_dp/nmc, "% completed."
-   if (mod(n,rec_step) .eq. 0) then
+   if (mod(n,rec_step) .eq. 0 .and. n .gt. therm) then
       call write_lattice(n)
    end if
 end do
@@ -126,6 +126,42 @@ contains !REMEMBER: Make sure var names declared on the functions and
       read(arg_rec_step,*) rec_step
    end if
    end subroutine read_args
+
+!==init_random_seed and lcg are adapted from gnu fortran manual
+!==The modification allows to always generate the same sequence
+!Source link
+!==https://gcc.gnu.org/onlinedocs/gcc-6.4.0/gfortran/RANDOM_005fSEED.html
+!==Accessed in 7th, July 2018.
+   subroutine init_random_seed()
+      use iso_fortran_env, only: int64
+      integer, allocatable :: seed(:)
+      integer :: i, n, un, istat, dt(8), pid
+      integer(int64) :: t
+
+      call random_seed(size = n)
+      allocate(seed(n))
+      t=123456
+      do i = 1, n
+        seed(i) = lcg(t)
+        t=t+123
+      end do
+      call random_seed(put=seed)
+  end subroutine init_random_seed
+
+  ! This simple PRNG might not be good enough for real work, but is
+  ! sufficient for seeding a better PRNG.
+  function lcg(s)
+    use iso_fortran_env, only: int64
+    integer :: lcg
+    integer(int64) :: s
+    if (s == 0) then
+       s = 104729
+    else
+       s = mod(s, 4294967296_int64)
+    end if
+    s = mod(s * 279470273_int64, 4294967291_int64)
+    lcg = int(mod(s, int(huge(0), int64)), kind(0))
+  end function lcg
 
 end program
 
