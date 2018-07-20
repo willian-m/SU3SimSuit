@@ -15,8 +15,9 @@ Old/*
 #Ignores output folder, which is typically HUGE (can be several GB)
 output/*
 
-#Ignores pdfs
+#Ignores pdfs and images
 *.pdf
+*.png
 
 #I use Visual Studio to debug. We exclude machine specific files from monitoring.
 #as well as builds
