@@ -1,0 +1,27 @@
+You need the FoX (A Fortran library for XML) to compile this program.
+
+The homepage of the project is: http://homepages.see.leeds.ac.uk/~earawa/FoX/
+
+The installation involves compiling the source code from file, and thus it should be possible to compile in any enviroment 
+with a standard Fortran compiler and usual unix compilations tool, like make. You do not need to run any command as sudo.
+
+1. Create a folder SU3SimSuit/src/lib 
+1. Download the software from: http://homepages.see.leeds.ac.uk/~earawa/FoX/source/
+   a) Choose the version you want to use. I verified everything is working with versions 4.1.0 and 4.1.2. Download the full version.
+   b) Save the file on the folder SU3SimSuit/src/lib you created above
+
+2. Extract it using
+$tar -xvf FoX-4.1.2-full.tar.gz
+
+3. Rename the extracted folder to FoX
+$ mv FoX-4.1.2-full FoX
+
+4. Enter on it and configure
+$.configure
+   a)If you are using intel compiler, use instead:  $./configure FC=ifort
+
+5. Compile it
+$make
+
+Now, one can compile using something like
+gfortran `src/lib/FoX/FoX-config` test.f90 -o test.run

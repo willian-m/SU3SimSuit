@@ -1,0 +1,61 @@
+You need the Intel Math Kernel library (MKL) to compile this program. Intel supplies this library freely. 
+Here I document its installation in a Debian-based system, i.e. using apt-get. I tested it on a "Bash 
+on Ubuntu on WIndows" (part of the Windows Subsystem for Linux - WSL) distribution and thus shoulkd work 
+in "true Linux" as well. Lines starting with a '$' can be executed as normal user. Lines starting with 
+a '#' needs to be executed as root, e.g. using sudo.
+
+This guide, up to step 4, is a short version of the more detailed version made by Intel, available at:
+https://software.intel.com/en-us/articles/intel-mkl-113-install-guide
+
+Notice: By downloading Intel Performance Libraries and Intel Distribution for Python you agree
+to the terms and conditions stated in Intel EULA. The EULA is available at the same page
+of the original Intel guide
+https://software.intel.com/en-us/articles/intel-mkl-113-install-guide
+
+
+1. Download and install the GPG key for the Intel repository
+
+$ wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+# apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+
+2. Add the Intel repository to the repository list.
+
+# wget https://apt.repos.intel.com/setup/intelproducts.list -O /etc/apt/sources.list.d/intelproducts.list
+
+Note: This repository contains all the Intel Performance Libraries and the Intel Distribution for Python.
+If you are interested on these, this guide can be used as well
+
+3. Update the metadata of the packages available
+
+# apt-get update
+
+4. Install the MKL
+
+# apt-get install intel-mkl
+
+5. Now we need to add the compile variables to our envirment. Open your .profile file (located
+under your home folder) and add at the bottom
+
+source /opt/intel/compilers_and_libraries/linux/bin/compilervars.sh -arch intel64 -platform linux
+
+6. Reboot (close all shell windows if under WSL) or
+
+$ source ~/.profile
+
+This concludes the necessary configuration. You may test if everything is working by going to the 
+root of the project and issuing
+
+$ make all FC=gfortran
+
+========================
+Note. If you are facing trouble, check if the variable $MKLROOT is set.
+In case no, you may want to run the script located in
+
+opt/intel/composerxe/linux/mkl/bin/mklvars.sh
+
+Of course, these instructions are for Debian-based systems. Other systems
+have different installation procedures, e.g. for arch-linux, one uses
+the AUR repository.
+
+
+
