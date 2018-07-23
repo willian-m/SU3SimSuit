@@ -40,7 +40,6 @@ for i in [1,2,3]:
         
         
 #Compute G_L and G_T as function of k
-
 G_L = []
 G_T = []
 error_GL = []
@@ -52,6 +51,12 @@ for k in range(len(momentum)):
     pz = (p - omega*nx*ny*nz)//(nx*ny)
     py = (p - omega*nx*ny*nz - pz*nx*ny)//nx
     px = p - omega*nx*ny*nz - pz*nx*ny - py*nx
+    #We interpret momentum as being between [-N/2+1,N/2]. Thus we must fix this
+    #Before storing it
+    omega = omega - nt*( omega//(nt//2 +1) )
+    pz = pz - nz*( pz//(nz//2 +1) )
+    py = py - ny*( py//(ny//2 +1) )
+    px = px - nx*( px//(nx//2 +1) )
     p_i = [px,py,pz,omega,px**2+py**2+pz**2,px**4+py**4+pz**4,px**6+py**6+pz**6]
 
     L = 0.0
@@ -82,11 +87,20 @@ for k in range(len(momentum)):
     #end if
 #end for
 
-plt.errorbar([point[0] for point in G_L[:]],[point[3] for point in G_L[:]],[point[3] for point in error_GL[:]],None,'bo',ms=3)
-plt.errorbar([point[0] for point in G_T[:]],[point[3] for point in G_T[:]],[point[3] for point in error_GT[:]],None,'go',ms=3)
+fig=plt.figure()
+fig.suptitle("Green functions - Every point computed")
+ax = fig.add_subplot(1,1,1)
+ax.set_xscale('log')
+plt.xlabel(r'$a^2 k^2$')
+plt.ylabel(r"$a^8 G(0,k^2)$")
+plt.errorbar([point[0] for point in G_L[:]],[point[3] for point in G_L[:]],[point[3] for point in error_GL[:]],None,'bo',ms=3,label="G_L")
+plt.errorbar([point[0] for point in G_T[:]],[point[3] for point in G_T[:]],[point[3] for point in error_GT[:]],None,'go',ms=3,label="G_T")
+plt.legend()
 plt.show()
 
 #Average over orbits (same p^2, p^[4] and p^[6])
+#Since we are evaluating it at omega=0, the symmetry is H(3)
+#and thus we don't even look at p^[8]
 
 #Create a vector with all points p^2, p^[4] and p^[6]
 
@@ -124,11 +138,21 @@ orb_avrgd_error_GL = avrg_over_orbit(error_GL)
 orb_avrgd_error_GT = avrg_over_orbit(error_GT)
 
 #Let's see how different they are comparing to before
-plt.errorbar([point[0] for point in orb_avrgd_GL[:]],[point[3] for point in orb_avrgd_GL[:]],[point[3] for point in orb_avrgd_error_GL[:]],None,'bo',ms=3)
-plt.errorbar([point[0] for point in orb_avrgd_GT[:]],[point[3] for point in orb_avrgd_GT[:]],[point[3] for point in orb_avrgd_error_GT[:]],None,'go',ms=3)
+fig=plt.figure()
+fig.suptitle("Green functions - Orbit averaged")
+ax = fig.add_subplot(1,1,1)
+ax.set_xscale('log')
+plt.xlabel(r'$a^2 k^2$')
+plt.ylabel(r"$a^8 G(0,k^2)$")
+plt.errorbar([point[0] for point in orb_avrgd_GL[:]],[point[3] for point in orb_avrgd_GL[:]],[point[3] for point in orb_avrgd_error_GL[:]],None,'bo',ms=3,label="G_L")
+plt.errorbar([point[0] for point in orb_avrgd_GT[:]],[point[3] for point in orb_avrgd_GT[:]],[point[3] for point in orb_avrgd_error_GT[:]],None,'go',ms=3,label="G_T")
+plt.legend()
 plt.show()
 
-#Let us try an avergae over p^2. This should give us a first approximation of what to expect
+#In a small lattice (Ns=8), there is only a few values of k^2 where there is more than
+#one orbit in it. Even on these cases, its only one extra orbit sharing the same k^2
+#Thus it is worth checking averging over k^2.
+#In a larger lattice, we may wish to extrapolate using a linear function (see comments below)
 
 def avrg_over_k2(data):
     p0=data[0][0]
@@ -157,13 +181,18 @@ p2_avrgd_GT = avrg_over_k2(orb_avrgd_GT)
 p2_avrgd_error_GL = avrg_over_k2(orb_avrgd_error_GL)
 p2_avrgd_error_GT = avrg_over_k2(orb_avrgd_error_GT)
 
-plt.errorbar([point[0] for point in p2_avrgd_GL[:]],[point[1] for point in p2_avrgd_GL[:]],[point[1] for point in p2_avrgd_error_GL[:]],None,'bo',ms=3)
-plt.errorbar([point[0] for point in p2_avrgd_GT[:]],[point[1] for point in p2_avrgd_GT[:]],[point[1] for point in p2_avrgd_error_GT[:]],None,'go',ms=3)
+fig=plt.figure()
+fig.suptitle(r"Green functions - $k^2$ averaged")
+ax = fig.add_subplot(1,1,1)
+ax.set_xscale('log')
+plt.xlabel(r'$a^2 k^2$')
+plt.ylabel(r"$a^8 G(0,k^2)$")
+plt.errorbar([point[0] for point in p2_avrgd_GL[:]],[point[1] for point in p2_avrgd_GL[:]],[point[1] for point in p2_avrgd_error_GL[:]],None,'bo',ms=3,label="G_L")
+plt.errorbar([point[0] for point in p2_avrgd_GT[:]],[point[1] for point in p2_avrgd_GT[:]],[point[1] for point in p2_avrgd_error_GT[:]],None,'go',ms=3,label="G_T")
+plt.legend()
 plt.show()
 
-#The right thing to do:
+#The right thing to do in a large lattice:
 #   a) Select all points with the same p^2
 #   b) Fit the values to F(p^[4]) = a + b*p^[4]
 #   c) The value for that p^2 is the value of a
-
-def extrapolator(data,error_data):
