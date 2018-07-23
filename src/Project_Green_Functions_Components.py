@@ -32,7 +32,7 @@ for i in [1,2,3]:
         #int_time[i-1].append(loadtxt(srcpath+'Corr4'+str(i)+'4'+str(j)+".dat",usecols=(3,)))
         for s in sigma[i-1][j-1]:
             if(s < 0):
-                raise(ValueError,"Warning! Found negative error!")
+                raise ValueError("Warning! Found negative error!")
             #end if
         #end for
     #end for
