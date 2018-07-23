@@ -29,3 +29,6 @@ src/lib/*
 
 #Ignore mkl files
 *mkl_dfti.f90
+
+#I use vscode, which creates a .vscode with editor configs. No need to sync it.
+.vscode/
