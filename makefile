@@ -63,7 +63,6 @@ $(BIN)/%.o: $(MODULES)/%.f90
 clean:
 	rm -f $(BIN)/*.o $(BIN)/*.mod $(BIN)/*.run
 	rmdir $(BIN)
-#	rm -rf output
 
 sandwich:
 	@USER="$(id -u)"
