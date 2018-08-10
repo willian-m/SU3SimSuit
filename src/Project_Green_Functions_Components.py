@@ -93,8 +93,8 @@ ax = fig.add_subplot(1,1,1)
 ax.set_xscale('log')
 plt.xlabel(r'$a^2 k^2$')
 plt.ylabel(r"$a^8 G(0,k^2)$")
-plt.errorbar([point[0] for point in G_L[:]],[point[3] for point in G_L[:]],[point[3] for point in error_GL[:]],None,'bo',ms=3,label="G_L")
 plt.errorbar([point[0] for point in G_T[:]],[point[3] for point in G_T[:]],[point[3] for point in error_GT[:]],None,'go',ms=3,label="G_T")
+plt.errorbar([point[0] for point in G_L[:]],[point[3] for point in G_L[:]],[point[3] for point in error_GL[:]],None,'bo',ms=3,label="G_L")
 plt.legend()
 plt.show()
 
@@ -144,8 +144,8 @@ ax = fig.add_subplot(1,1,1)
 ax.set_xscale('log')
 plt.xlabel(r'$a^2 k^2$')
 plt.ylabel(r"$a^8 G(0,k^2)$")
-plt.errorbar([point[0] for point in orb_avrgd_GL[:]],[point[3] for point in orb_avrgd_GL[:]],[point[3] for point in orb_avrgd_error_GL[:]],None,'bo',ms=3,label="G_L")
 plt.errorbar([point[0] for point in orb_avrgd_GT[:]],[point[3] for point in orb_avrgd_GT[:]],[point[3] for point in orb_avrgd_error_GT[:]],None,'go',ms=3,label="G_T")
+plt.errorbar([point[0] for point in orb_avrgd_GL[:]],[point[3] for point in orb_avrgd_GL[:]],[point[3] for point in orb_avrgd_error_GL[:]],None,'bo',ms=3,label="G_L")
 plt.legend()
 plt.show()
 
@@ -187,11 +187,28 @@ ax = fig.add_subplot(1,1,1)
 ax.set_xscale('log')
 plt.xlabel(r'$a^2 k^2$')
 plt.ylabel(r"$a^8 G(0,k^2)$")
-plt.errorbar([point[0] for point in p2_avrgd_GL[:]],[point[1] for point in p2_avrgd_GL[:]],[point[1] for point in p2_avrgd_error_GL[:]],None,'bo',ms=3,label="G_L")
+
 plt.errorbar([point[0] for point in p2_avrgd_GT[:]],[point[1] for point in p2_avrgd_GT[:]],[point[1] for point in p2_avrgd_error_GT[:]],None,'go',ms=3,label="G_T")
+plt.errorbar([point[0] for point in p2_avrgd_GL[:]],[point[1] for point in p2_avrgd_GL[:]],[point[1] for point in p2_avrgd_error_GL[:]],None,'bo',ms=3,label="G_L")
 plt.legend()
 plt.show()
 
+#Last plot. Subtraction of both data
+
+difference=[]
+for i in range(len(p2_avrgd_GT[:])):
+    difference.append([p2_avrgd_GT[i][0],p2_avrgd_GT[i][1]-p2_avrgd_GL[i][1],p2_avrgd_error_GT[i][1]+p2_avrgd_error_GL[i][1] ])
+
+fig=plt.figure()
+fig.suptitle(r"$G^\parallel(|\vec{k}|) - G^\bot(|\vec{k}|)$ - $k^2$ averaged")
+ax = fig.add_subplot(1,1,1)
+ax.set_xscale('log')
+plt.xlabel(r'$a^2 k^2$')
+plt.ylabel(r"$a^8 G(0,k^2)$")
+
+plt.errorbar([point[0] for point in difference[:]],[point[1] for point in difference[:]],[point[2] for point in difference[:]],None,'bo',ms=3)
+plt.legend()
+plt.show()
 #The right thing to do in a large lattice:
 #   a) Select all points with the same p^2
 #   b) Fit the values to F(p^[4]) = a + b*p^[4]
