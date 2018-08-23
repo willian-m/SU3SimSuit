@@ -2,7 +2,7 @@
 !of tensors. it is not expected for it to be heavy and will receive all
 !configurations as input, outputting the average and estimated error.
 
-include "mkl_dfti.f90"
+!include "mkl_dfti.f90"
 
 program tmunu_corr
 use types_params
@@ -80,9 +80,9 @@ end do
 !Save essential data
 write(filename,'("Corr",4I1.1,".dat")') mu,nu,rho,sigma
 open(newunit=nw,file=filename)
-write(nw, "(A,A,A,A)") "#t, ", "estimator, ","estimated error","integrated correlation time"
+write(nw, "(A10,3X,3(A23,3X))") "#t, ", "estimator, ","estimated error","integrated correlation time"
 do k1=0,nx*ny*nz*nt-1
-    write(nw,*) k1, avrg(k1), estimated_error(k1),integrated_corr_time(k1)
+    write(nw,'(I10,3X,3(ES23.16,3X))') k1, avrg(k1), estimated_error(k1),integrated_corr_time(k1)
 end do
 close(nw)
 
