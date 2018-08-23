@@ -32,7 +32,6 @@ endif
 
 all: gen_lat_conf.run avrg_plaquette.run tmunu.run green_function_tmunu.run
 
-
 OBJ_LAT_CONF=$(BIN)/ziggurat.o $(BIN)/types_params.o $(BIN)/math.o $(BIN)/IO.o $(BIN)/lattice.o $(BIN)/objects.o $(BIN)/heat_bath.o $(BIN)/xml_parser.o
 gen_lat_conf.run: dir $(OBJ_LAT_CONF) $(SRC)/gen_lat_conf.f90
 	$(FC) $(FFLAGS) -I$(BIN) $(OBJ_LAT_CONF) `$(SRC)/lib/FoX/FoX-config` $(SRC)/gen_lat_conf.f90 -o $(BIN)/$@
@@ -46,8 +45,8 @@ tmunu.run: dir $(OBJ_TMUNU) $(SRC)/tmunu.f90
 	$(FC) $(FFLAGS) -I$(BIN) $(OBJ_TMUNU) $(SRC)/tmunu.f90 -o $(BIN)/$@
 
 OBJ_GREEN_FUNCTION=$(BIN)/ziggurat.o $(BIN)/types_params.o $(BIN)/math.o $(BIN)/IO.o $(BIN)/lattice.o $(BIN)/xml_parser.o $(BIN)/statistic.o
-green_function_tmunu.run: dir $(OBJ_TENSOR_CORRELATOR) $(SRC)/tmunu.f90
-	$(FC) $(FFLAGS) -I$(BIN) -I$(MKLROOT)/include  $(OBJ_TENSOR_CORRELATOR) `$(SRC)/lib/FoX/FoX-config` $(SRC)/green_function_tmunu.f90 $(MKL_LINK) -o $(BIN)/$@
+green_function_tmunu.run: dir $(OBJ_GREEN_FUNCTION) $(SRC)/green_function_tmunu.f90
+	$(FC) $(FFLAGS) -I$(BIN) -I$(MKLROOT)/include  $(OBJ_GREEN_FUNCTION) `$(SRC)/lib/FoX/FoX-config` $(SRC)/green_function_tmunu.f90 $(MKL_LINK) -o $(BIN)/$@
 
 dir: 
 	mkdir -p $(BIN)
