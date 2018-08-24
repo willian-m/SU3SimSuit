@@ -29,6 +29,7 @@ use lattice, only : hot_start,lattice_file,init_lattice
 use heat_bath, only : heat_bath_method
 use IO, only : write_lattice
 use xml_parser, only : read_xml, nmc, therm, rec_step
+use objects, only : S, wilson_action
 !==============================
 
 implicit none
@@ -55,17 +56,16 @@ clock = 123
 call zigset(clock) !Set seed for ziggurat random number generator
 call init_random_seed !Set seed for fortran random number generator 
 
-print*, "Lattice size: ",nx,"x",ny,"x",nz,"x",nt
-print*, "Beta:", beta
-
 !Initialize the lattice according to user request
 call init_lattice(lattice_file)
+S=wilson_action()
+print *,0,",", S
 call write_lattice(0)
 do n=1,nmc
    call heat_bath_method
-   print *, dble(n)*100.0_dp/nmc, "% completed."
    if (mod(n,rec_step) .eq. 0 .and. n .gt. therm) then
-      call write_lattice(n)
+     print *, n,",",S
+     call write_lattice(n)
    end if
 end do
 

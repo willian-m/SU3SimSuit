@@ -25,12 +25,13 @@ implicit none
 
 !==============================
 !List of public variables
+real(dp) :: S !Keep track of the action value
 
 !List private variables
 !==============================
 
 private
-public plaquette,compute_staple,Tmunu
+public plaquette,compute_staple,Tmunu,S,wilson_action
 
 contains
 
@@ -205,5 +206,25 @@ subroutine Tmunu(x, T)
     
 end subroutine Tmunu
 !==============================
+
+!==============================
+!Compute Wilson action
+real(dp) function wilson_action()
+integer :: x,mu,nu
+real(dp) :: S_w
+type(SU3) :: plaq
+S_w = 0
+do x=0,nx*ny*nz*nt-1
+   do mu=1,4
+      do nu=mu+1,4
+         call plaquette(mu,nu,x,plaq)
+         S_w = S_w + real(SU3_Tr(plaq))
+      end do
+   end do
+end do
+wilson_action = beta*(nx*ny*nz*nt*6.0_dp - S_w/3.0_dp)
+
+end function wilson_action
+
 
 end module objects

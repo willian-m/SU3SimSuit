@@ -1,73 +1,77 @@
-#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 """
+Spyder Editor
+
+Este é um arquivo de script temporário.
 """
 
-from numpy import loadtxt,average,std
-import numpy as np
 from matplotlib import pyplot as plt
-from math import sqrt,log
+import numpy as np
 
-def auto_corr(d):
-    len_out = int(len(d)/2)
-    out=np.zeros(len_out)
-    avrg = average(d[:len_out])
-    for t in range(len_out):
-        for s in range(int(len_out)):
-            out[t] = out[t] + d[t+s]*d[s] - avrg**2
-        out[t] = out[t]/(len_out) #- avrg**2
-    out = out/np.std(d)**2
-    return(out)
 
-def exp_time(correl_func):
-    out=np.zeros(len(correl_func))
-    for i in range(len(correl_func)):
-        #print(i,log(abs(correl_func[i])))
-        out[i] = -i/log(abs(correl_func[i]))
-    return(out)
+def correlation_func_computer(d):
+    data_fft=np.fft.rfft(d)
+    corr_fourier=[]
+    for omega in data_fft:
+        corr_fourier.append(omega*np.conjugate(omega))
+    #end for
+    return(np.fft.irfft(corr_fourier)/len(d)-float(data_fft[0])**2/len(d)**2)
     
-#root_dir = "D:\\git_repos\\SU3SimSuit"
-root_dir = "/home/willian/git_repos/SU3SimSuit"
-data=loadtxt(root_dir+'/output/avrg_plaquette.out')
+def exp_corr_time(c):
+    i = 0
+    while (i < len(c)-1) & (c[i] > c[0]*np.exp(-1)):
+        i =i + 1
+    #end while
+    return(i)
 
-#data=data[:5000]
-
-plt.plot(range(len(data)),data)
-
-#input("Press enter to continue.")
-
-therm=50 #Thermalization time
-
-c = auto_corr(data[therm:])
-tau_exp = exp_time(c)
-plt.figure()
-plt.plot(range(len(c)),c)
-#plt.figure()
-#plt.plot(range(len(tau_exp)),tau_exp)
-
-
-t=1
-plt.figure()
-plt.plot(range(0,len(data[therm::t])),data[therm::t])
-print(average(data[therm::t]),'+/-',std(data[therm::t])/sqrt((len(data[therm::t]))))
-
-def jacknife(data,nbins):
-    bin_data=np.zeros(nbins,dtype=np.float64)
-    bin_size=len(data)/nbins
-    for i in range(len(data)):
-        bin_index=int(i/bin_size)
-        bin_data[bin_index] = bin_data[bin_index] + data[i]
+def int_corr_time(b_size,inp_data):
+    nbins = len(inp_data)//b_size
+    binned_data = []
     for i in range(nbins):
-        bin_data[i] = bin_data[i]/bin_size
+        binned_data.append(0)
+        for j in range(bin_size):
+            binned_data[-1] = binned_data[-1] + inp_data[j+i*bin_size][1]
+        #end for
+        binned_data[-1]=binned_data[-1]/b_size
+    #end for
+    
+    return(np.std(binned_data)/np.std(inp_data))
+            
+#Load action data
+action_data = np.loadtxt('output/action.out',dtype=np.float64,delimiter=",")
         
-    avrg=average(data)
-    error = 0.0
-    for i in range(nbins):
-        error=error+(bin_data[i]-avrg)**2
-    
-    error = error*(nbins-1.0)/nbins
-    return(error)
+corr_func=correlation_func_computer([y[1] for y in action_data])
+exp_time=exp_corr_time(corr_func)
 
-print("Jacknife error:",jacknife(data[therm:],4))
+#Uses exp_time to estimate a thermalization time
+therm_time=10*exp_time
+#If resulting array has odd length, increase the therm_time by 1
+if( (len(action_data)-therm_time)%2 != 0):
+    therm_time = therm_time + 1
+
+#Recomputes correlation function, now without thermalization influence
+
+corr_func=correlation_func_computer([y[1] for y in action_data[therm_time:]])
+exp_time=exp_corr_time(corr_func)
+
+#We bin the data on bins of size at least 2*exp_time
+bin_size = 2*exp_time
+while( len(action_data[therm_time:])%bin_size != 0  & bin_size < len(action_data[therm_time:])//2):
+    bin_size = bin_size + 1
+
+int_time = int_corr_time(bin_size,action_data[therm_time:])
+
+if (int_time < 1): #Decorrelated samples. Use standard techniques
+    print("Thermalization time:",therm_time)
+    print("Data can be treated as decorrelated")
+    print("Average action:",np.average(action_data[therm_time:]))
+    print("Average error:",np.std(action_data[therm_time:])/np.sqrt(len(action_data[therm_time:])))
+else: #Error is the naive times sqrt(int_time)
+    print("Thermalization time:",therm_time)
+    print("Correlation time:",int_time)
+    print("Average action:",np.average(action_data[therm_time:]))
+    print("Average error:",np.sqrt(int_time)*np.std(action_data[therm_time:])/np.sqrt(len(action_data[therm_time:])))
+#plt.plot(range(len(corr_func)),corr_func)
+plt.plot([x[0] for x in action_data],[y[1] for y in action_data])
 plt.show()
 
