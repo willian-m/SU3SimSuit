@@ -13,7 +13,7 @@ module heat_bath
 use types_params
 use lattice, only : increment_table
 use math, only : SU3mult,SU2mult,detSU2_like,subgroup,embed_in_SU3,SU3_dagger,SU3projector,invert_3x3_complex,SU3_ReTr
-use objects, only : compute_staple
+use objects, only : compute_staple,S
 implicit none
 
 !==============================
@@ -58,6 +58,11 @@ real(dp) :: det
 
 !1) Compute Staple
 call compute_staple(d,y,staple)
+
+!1a) Remove from the action the action the contribution
+!of the link being updated
+call SU3mult(U(d,y),staple,W)
+S = S - beta*(1.0_dp - SU3_ReTr(W)/3.0_dp)
 
 !For each one the 3 SU(2) subgroups of SU(3)
 do a=1,2
@@ -104,6 +109,10 @@ end do
 !As a final step, we perform one overrelax hit
 call overrelax(U(d,y))
 call SU3_dagger(U(d,y),U(d-1,y+increment_table(y,d)))
+
+!Update the action
+call SU3mult(U(d,y),staple,W)
+S = S + beta*(1.0_dp - SU3_ReTr(W)/3.0_dp)
 
 end subroutine heat_bath_hit
 !==============================
