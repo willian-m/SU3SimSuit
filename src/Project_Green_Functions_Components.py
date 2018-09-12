@@ -5,9 +5,10 @@ Spyder Editor
 This is a temporary script file.
 """
 
-from numpy import loadtxt,sqrt
+from numpy import loadtxt
 import xml.dom.minidom as md
 from matplotlib import pyplot as plt
+import matplotlib
 
 srcpath='./output/'
 input_xml = md.parse('./input.xml')
@@ -87,14 +88,20 @@ for k in range(len(momentum)):
     #end if
 #end for
 
+font = {'family' : 'normal',
+        'weight' : 'normal',
+        'size'   : 20}
+
+matplotlib.rc('font', **font)
+
 fig=plt.figure()
 fig.suptitle("Green functions - Every point computed")
 ax = fig.add_subplot(1,1,1)
 ax.set_xscale('log')
 plt.xlabel(r'$a^2 k^2$')
 plt.ylabel(r"$a^8 G(0,k^2)$")
-plt.errorbar([point[0] for point in G_T[:]],[point[3] for point in G_T[:]],[point[3] for point in error_GT[:]],None,'go',ms=3,label="G_T")
-plt.errorbar([point[0] for point in G_L[:]],[point[3] for point in G_L[:]],[point[3] for point in error_GL[:]],None,'bo',ms=3,label="G_L")
+plt.errorbar([point[0] for point in G_T[:]],[point[3] for point in G_T[:]],[point[3] for point in error_GT[:]],None,'go',ms=3,label=r"$G^\bot$")
+plt.errorbar([point[0] for point in G_L[:]],[point[3] for point in G_L[:]],[point[3] for point in error_GL[:]],None,'bo',ms=3,label=r"$G^\parallel$")
 plt.legend()
 plt.show()
 
@@ -144,8 +151,8 @@ ax = fig.add_subplot(1,1,1)
 ax.set_xscale('log')
 plt.xlabel(r'$a^2 k^2$')
 plt.ylabel(r"$a^8 G(0,k^2)$")
-plt.errorbar([point[0] for point in orb_avrgd_GT[:]],[point[3] for point in orb_avrgd_GT[:]],[point[3] for point in orb_avrgd_error_GT[:]],None,'go',ms=3,label="G_T")
-plt.errorbar([point[0] for point in orb_avrgd_GL[:]],[point[3] for point in orb_avrgd_GL[:]],[point[3] for point in orb_avrgd_error_GL[:]],None,'bo',ms=3,label="G_L")
+plt.errorbar([point[0] for point in orb_avrgd_GT[:]],[point[3] for point in orb_avrgd_GT[:]],[point[3] for point in orb_avrgd_error_GT[:]],None,'go',ms=3,label=r"$G^\bot$")
+plt.errorbar([point[0] for point in orb_avrgd_GL[:]],[point[3] for point in orb_avrgd_GL[:]],[point[3] for point in orb_avrgd_error_GL[:]],None,'bo',ms=3,label=r"$G^\parallel$")
 plt.legend()
 plt.show()
 
@@ -188,8 +195,8 @@ ax.set_xscale('log')
 plt.xlabel(r'$a^2 k^2$')
 plt.ylabel(r"$a^8 G(0,k^2)$")
 
-plt.errorbar([point[0] for point in p2_avrgd_GT[:]],[point[1] for point in p2_avrgd_GT[:]],[point[1] for point in p2_avrgd_error_GT[:]],None,'go',ms=3,label="G_T")
-plt.errorbar([point[0] for point in p2_avrgd_GL[:]],[point[1] for point in p2_avrgd_GL[:]],[point[1] for point in p2_avrgd_error_GL[:]],None,'bo',ms=3,label="G_L")
+plt.errorbar([point[0] for point in p2_avrgd_GT[:]],[point[1] for point in p2_avrgd_GT[:]],[point[1] for point in p2_avrgd_error_GT[:]],None,'go',ms=3,label=r"$G^\bot$")
+plt.errorbar([point[0] for point in p2_avrgd_GL[:]],[point[1] for point in p2_avrgd_GL[:]],[point[1] for point in p2_avrgd_error_GL[:]],None,'bo',ms=3,label=r"$G^\parallel$")
 plt.legend()
 plt.show()
 
