@@ -37,7 +37,7 @@ FOXINCLUDE=-I$(FOX)/common -I$(FOX)/fsys -I$(FOX)/utils -I$(FOX)/sax
 FOXLIB=$(FOX)/sax/*.o $(FOX)/fsys/*.o $(FOX)/common/*.o $(FOX)/utils/*.o
 
 fermion_tmunu.run: dir $(MODULES)/ziggurat.f90  $(MODULES)/types_params.f90 $(MODULES)/math.f90 $(MODULES)/IO.f90 $(MODULES)/lattice.f90 $(MODULES)/xml_parser.f90 $(MODULES)/cuda_fermion_prop.f90 $(SRC)/fermion_tmunu.f90
-	pgfortran -Mcuda=cc20 $(FOXINCLUDE) $(FOXLIB) $(MODULES)/ziggurat.f90  $(MODULES)/types_params.f90 $(MODULES)/math.f90 $(MODULES)/IO.f90 $(MODULES)/lattice.f90 $(MODULES)/xml_parser.f90 $(MODULES)/cuda_fermion_prop.f90 $(SRC)/fermion_tmunu.f90
+	pgfortran -Mcuda=cc20 -Mcudalib=cublas $(FOXINCLUDE) $(FOXLIB) $(MODULES)/ziggurat.f90  $(MODULES)/types_params.f90 $(MODULES)/math.f90 $(MODULES)/IO.f90 $(MODULES)/lattice.f90 $(MODULES)/xml_parser.f90 $(MODULES)/cuda_fermion_prop.f90 $(SRC)/fermion_tmunu.f90
 
 OBJ_LAT_CONF=$(BIN)/ziggurat.o $(BIN)/types_params.o $(BIN)/math.o $(BIN)/IO.o $(BIN)/lattice.o $(BIN)/objects.o $(BIN)/heat_bath.o $(BIN)/xml_parser.o
 gen_lat_conf.run: dir $(OBJ_LAT_CONF) $(SRC)/gen_lat_conf.f90
@@ -60,7 +60,7 @@ dir:
 
 $(BIN)/%.o: $(MODULES)/%.f90
 	ln -sf $(MKLROOT)/include/mkl_dfti.f90 $(MODULES)/mkl_dfti.f90 
-	if [ $(FC) = ifort ]; then $(FC) -I=$(MODULES) $(MKL_LINK) $(FFLAGS) -c -module $(BIN) -o $@ $<; elif [ $(FC) = gfortran ]; then $(FC) $(MKL_LINK) $(FFLAGS) -c -J$(BIN) -o $@ $<; fi
+	if [ $(FC) = ifort ]; then $(FC) -I=$(MODULES) $(MKL_LINK) $(FFLAGS) -c -module $(BIN) -o $@ $<; elif [ $(FC) = gfortran ]; then $(FC) $(MKL_LINK) $(FFLAGS) -c -J$(BIN) -o $@ $<; elif [ $(FC) = pgfortran ]; then $(FC) $(MKL_LINK) $(FFLAGS) -c -J$(BIN) -o $@ $<; fi
 
 clean:
 	rm -f $(BIN)/*.o $(BIN)/*.mod $(BIN)/*.run
