@@ -47,7 +47,7 @@ module fermion_prop
       
       !Load memory
       
-      mass = cmplx(0.0_dp,0.0_dp)
+      mass = cmplx(1.0_dp,0.0_dp)
       z_minus_one = cmplx(-1.0_dp,0.0_dp)
       z_one = cmplx(1.0_dp,0.0_dp)
       i_one = 1
@@ -70,9 +70,10 @@ module fermion_prop
             call zscal(array_dim,z_minus_one,r,i_one) !scales a vector by a constant
             call zcopy(array_dim,r,i_one,r_tilde,i_one)
             
-            stop_condition = .true.
+            stop_condition = .false.
             step = 1
-            do while (stop_condition)
+            do 
+               if (stop_condition) exit
                !Begin computes p
                if (step .eq. 1) then
                   rho1 = zdotc(array_dim,r_tilde,i_one,r,i_one)   !Needed for next step
@@ -86,8 +87,8 @@ module fermion_prop
                      call zscal(array_dim,beta_cg,p,i_one)
                      call zaxpy(array_dim,z_one,r,i_one,p,i_one)
                   else
-                     print *, "ERROR: Division by zero found. Aborting"
-                     stop_condition = .false.
+                     print *, "ERROR: Division by zero found at iteration", step,". Aborting"
+                     exit
                   end if
                end if
 
@@ -113,11 +114,11 @@ module fermion_prop
                   step = step + 1
                   if (step .gt. max_step) then
                      print *, "Max step reached without finding a convergence"
-                     stop_condition = .false.
+                     stop_condition = .true.
                   end if
                else
                   call zaxpy(array_dim,alpha_cg,p,i_one,prop(:,spin_color_index),i_one)
-                  stop_condition = .false.
+                  stop_condition = .true.
                end if
             end do
          end do
@@ -138,18 +139,43 @@ module fermion_prop
    subroutine dirac_vector_multiply(in_array,out_array)
       complex(dp), intent(in) :: in_array(:)
       complex(dp), intent(out) :: out_array(:)
-      integer :: i, beta,b
+      integer :: x,y,alpha,beta,a,b,mu,i,j
       
-      do i=0,array_dim/12-1
-        do beta=1,4 
-            do b=1,3
-               dirac_vector = cmplx(0.0_dp,0.0_dp)
-               call make_dirac_vector(b,beta,i)
-               out_array(b + 3*(beta-1) + 12*i) = zdotu(array_dim,dirac_vector,i_one,in_array,i_one)
+      out_array = cmplx(0.0_dp,0.0_dp)
+      do x=0,array_dim/12-1
+        do alpha=1,4 
+            do a=1,3
+               i = a + 3*(alpha-1) + 12*x
+
+               !We build the i-th line of the dirac matrix
+               do y=0,array_dim/12-1
+                  do beta=1,4
+                     do b=1,3
+                        j = b + 3*(beta-1) + 12*y
+
+                        !Gauge dependent term
+                        do mu=1,8
+                           if (y .eq. x+increment_table(x,mu)) then
+                              out_array(i) = out_array(i) - cmplx(0.5_dp,0.0_dp)*gamma_mu_star(alpha,beta,mu)*U(mu,y)%a(a,b)*in_array(j)
+                              !if(x .eq. 3) then
+                              !   print *, y,mu,i,out_array(i),in_array(j)
+                              !end if
+                           end if
+                        end do
+                        
+                        !Mass term
+                        if ( (y .eq. x) .and. (a .eq. b) .and. (alpha .eq. beta) ) then
+                           out_array(i) = out_array(i) + (mass + cmplx(4.0_dp,0.0_dp))*in_array(j)
+                        end if
+
+                     end do
+                  end do
+               end do
             end do
          end do
       end do
-
+      !print *, (i,out_array(i),"\n",i=1,100)
+      !read(5,*)
    end subroutine
    !=============================
 
@@ -166,7 +192,7 @@ module fermion_prop
                b = i - beta*3
       
                dirac_vector(b+3*beta + 12*y) = cmplx(0.0_dp,0.0_dp)
-               if (y .eq. increment_table(x,mu)) then
+               if (x .eq. increment_table(y,mu)) then
                   dirac_vector(b+3*beta + 12*y) = dirac_vector(b+3*beta + 12*y) + gamma_mu_star(alpha,beta+1,mu)*U(mu,x)%a(a,b)
                end if
 
@@ -247,37 +273,37 @@ module fermion_prop
       gamma_mu_star = cmplx(0.0_dp,0.0_dp)
 
 
-      !gamma_muamma_1
+      !gamma_mu_1
       gamma_mu(1,4,2) = dcmplx(0.0_dp,1.0_dp)
       gamma_mu(2,3,2) = dcmplx(0.0_dp,1.0_dp)
       gamma_mu(3,2,2) = dcmplx(0.0_dp,-1.0_dp)
       gamma_mu(4,1,2) = dcmplx(0.0_dp,-1.0_dp)
 
-      gamma_mu(:,:,1) = -gamma_mu(:,:,2)!gamma_mu_{-mu} = -gamma_mu_mu.
+      gamma_mu(:,:,1) = -gamma_mu(:,:,2)!gamma_{-mu} = -gamma_mu.
 
-      !gamma_muamma_2
+      !gamma_mu_2
       gamma_mu(1,4,4) = dcmplx(1.0_dp,0.0_dp)
       gamma_mu(2,3,4) = dcmplx(-1.0_dp,0.0_dp)
       gamma_mu(3,2,4) = dcmplx(-1.0_dp,0.0_dp)
       gamma_mu(4,1,4) = dcmplx(1.0_dp,0.0_dp)
 
-      gamma_mu(:,:,3) = -gamma_mu(:,:,4)!gamma_mu_{-mu} = -gamma_mu_mu.
+      gamma_mu(:,:,3) = -gamma_mu(:,:,4)!gamma_{-mu} = -gamma_mu.
 
-      !gamma_muamma_3
+      !gamma_mu_3
       gamma_mu(1,3,6) = dcmplx(0.0_dp,1.0_dp)
       gamma_mu(2,4,6) = dcmplx(0.0_dp,-1.0_dp)
       gamma_mu(3,1,6) = dcmplx(0.0_dp,-1.0_dp)
       gamma_mu(4,2,6) = dcmplx(0.0_dp,1.0_dp)
 
-      gamma_mu(:,:,5) = -gamma_mu(:,:,6)!gamma_mu_{-mu} = -gamma_mu_mu.
+      gamma_mu(:,:,5) = -gamma_mu(:,:,6)!gamma_{-mu} = -gamma_mu.
 
-      !gamma_muamma_4
+      !gamma_mu_4
       gamma_mu(1,3,8) = dcmplx(1.0_dp,0.0_dp)
       gamma_mu(2,4,8) = dcmplx(1.0_dp,0.0_dp)
       gamma_mu(3,1,8) = dcmplx(1.0_dp,0.0_dp)
       gamma_mu(4,2,8) = dcmplx(1.0_dp,0.0_dp)
 
-      gamma_mu(:,:,7) = -gamma_mu(:,:,8)!gamma_mu_{-mu} = -gamma_mu_mu.
+      gamma_mu(:,:,7) = -gamma_mu(:,:,8)!gamma_{-mu} = -gamma_mu.
 
       !gamma_mu_star is the negative of gamma_mu
       gamma_mu_star = -gamma_mu

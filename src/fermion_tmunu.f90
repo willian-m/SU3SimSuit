@@ -25,7 +25,7 @@ program fermion_tmunu
     open(unit=1,file="fermion_prop.dat")
     do i=0,12*nx*ny*nz*nt-1
         do j=0,11
-            write(1,*) i,j,propagator(i,j)
+            write(1,*) i, j, real(propagator(i,j)), aimag(propagator(i,j))
         end do
     end do
     close(1)
