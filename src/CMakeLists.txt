@@ -3,16 +3,31 @@ project (SU3SimSuit)
 
 enable_language(Fortran)
 
+#======================================================#
+#Forces use of pgfortran compiler and set its lib paths#
+#======================================================#
 set(CMAKE_Fortran_COMPILER pgfortran)
-set(CMAKE_LIBRARY_PATH_FLAG $PGI_HOME/lib)
-set(CMAKE_LIBRARY_PATH_FLAG /opt/cuda/lib64)
+
+if (WIN32)
+else()
+    set(CMAKE_LIBRARY_PATH_FLAG $PGI_HOME/lib)
+    set(CMAKE_LIBRARY_PATH_FLAG /opt/cuda/lib64)
+endif()
 
 set(MODULES_DIR ${CMAKE_SOURCE_DIR}/modules)
 set(FERMION_EMT_DEPENDENCY ${MODULES_DIR}/fermion_prop.f90 ${MODULES_DIR}/lattice.f90 ${MODULES_DIR}/math.f90 ${MODULES_DIR}/IO.f90 ${MODULES_DIR}/types_params.f90 ${MODULES_DIR}/ziggurat.f90)
 
 add_executable(fermion_tmunu.run fermion_tmunu.f90 ${FERMION_EMT_DEPENDENCY})
 
-SET_SOURCE_FILES_PROPERTIES(${MODULES_DIR}/fermion_prop.f90 PROPERTIES COMPILE_FLAGS "-Mcudalib=cublas")
-#SET_TARGET_PROPERTIES(fermion_tmunu PROPERTIES LINK_FLAGS "-Mcudalib=cublas")
+#SET_SOURCE_FILES_PROPERTIES(${MODULES_DIR}/fermion_prop.f90 PROPERTIES COMPILE_FLAGS "-Mcudalib=cublas -Minfo=all,ccff -Mneginfo -ta=multicore")
+#SET_SOURCE_FILES_PROPERTIES(${MODULES_DIR}/fermion_prop.f90 PROPERTIES COMPILE_FLAGS "-Mcudalib=cublas -Minfo=all,ccff -Mneginfo -ta=tesla,lineinfo")
+SET_SOURCE_FILES_PROPERTIES(${MODULES_DIR}/fermion_prop.f90 PROPERTIES COMPILE_FLAGS "-Mcudalib=cublas -Minfo=all,ccff -Mneginfo")
+
+#SET_TARGET_PROPERTIES(fermion_tmunu.run PROPERTIES LINK_FLAGS "-acc")
 
 target_link_libraries(fermion_tmunu.run -lcudaforblas -lblas -lcublas -Mcudalib=cublas -lcudafor -Mcuda)
+
+#==========================================#
+#Flags used for profiling and optimizations#
+#==========================================#
+#SET_PROPERTY(GLOBAL APPEND PROPERTY COMPILE_FLAGS "-Minfo=all,ccff -Mneginfo")

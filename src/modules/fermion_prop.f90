@@ -20,7 +20,7 @@ module fermion_prop
    !=============================
    !Compute the propagator using the BI-CGStab algorithm
    subroutine compute_prop(prop)
-      integer, parameter :: max_step = 100
+      integer, parameter :: max_step = 5
       complex(dp), intent(out) :: prop(:,:)
       complex(dp), allocatable :: source(:,:)
       type(cublasHandle) :: handle
@@ -62,7 +62,8 @@ module fermion_prop
       do alpha=1,4
          do a=1,3
             spin_color_index = a + 3*(alpha-1)
-            call zcopy(array_dim,source(:,spin_color_index),i_one,prop(:,spin_color_index),i_one)
+            call init_prop(a, alpha, prop(:,spin_color_index))
+            !call zcopy(array_dim,source(:,spin_color_index),i_one,prop(:,spin_color_index),i_one)
             
             !Initialization
             call dirac_vector_multiply(prop(:,spin_color_index),r)
@@ -70,6 +71,8 @@ module fermion_prop
             call zscal(array_dim,z_minus_one,r,i_one) !scales a vector by a constant
             call zcopy(array_dim,r,i_one,r_tilde,i_one)
             
+            !print *, r_tilde(1:100)
+            !write(5,*)
             stop_condition = .false.
             step = 1
             do 
@@ -139,68 +142,75 @@ module fermion_prop
    subroutine dirac_vector_multiply(in_array,out_array)
       complex(dp), intent(in) :: in_array(:)
       complex(dp), intent(out) :: out_array(:)
+      complex(dp) :: reduce_var
       integer :: x,y,alpha,beta,a,b,mu,i,j
       
       out_array = cmplx(0.0_dp,0.0_dp)
+      
       do x=0,array_dim/12-1
         do alpha=1,4 
             do a=1,3
                i = a + 3*(alpha-1) + 12*x
 
                !We build the i-th line of the dirac matrix
+               !$acc parallel copyin(gamma_mu_star(1:4,1:4,1:8), U(8,0:array_dim/12-1),in_array(1:array_dim),i) copyout(out_array(1:array_dim)) private(reduce_var)
+               reduce_var = cmplx(0.0_dp,0.0_dp)
+               !$acc loop
                do y=0,array_dim/12-1
+                  !$acc loop
                   do beta=1,4
-                     do b=1,3
+                     !$acc loop reduction(-:reduce_var) private(j)
+                     do b=1,3 
                         j = b + 3*(beta-1) + 12*y
 
                         !Gauge dependent term
+                        
                         do mu=1,8
                            if (y .eq. x+increment_table(x,mu)) then
-                              out_array(i) = out_array(i) - cmplx(0.5_dp,0.0_dp)*gamma_mu_star(alpha,beta,mu)*U(mu,y)%a(a,b)*in_array(j)
-                              !if(x .eq. 3) then
-                              !   print *, y,mu,i,out_array(i),in_array(j)
-                              !end if
+                              reduce_var = reduce_var + cmplx(-0.5_dp,0.0_dp)*gamma_mu_star(alpha,beta,mu)*U(mu,y)%a(a,b)*in_array(j)
+                              !out_array(i) = out_array(i) - cmplx(0.5_dp,0.0_dp)*gamma_mu_star(alpha,beta,mu)*U(mu,y)%a(a,b)*in_array(j)
                            end if
                         end do
-                        
+
                         !Mass term
                         if ( (y .eq. x) .and. (a .eq. b) .and. (alpha .eq. beta) ) then
-                           out_array(i) = out_array(i) + (mass + cmplx(4.0_dp,0.0_dp))*in_array(j)
+                           reduce_var = reduce_var + (mass + cmplx(4.0_dp,0.0_dp))*in_array(j)
+                           !out_array(i) = out_array(i) + (mass + cmplx(4.0_dp,0.0_dp))*in_array(j)
                         end if
-
                      end do
+
                   end do
                end do
+               out_array(i) = reduce_var
+               !$acc end parallel
+               print *, out_array(1:50)
             end do
          end do
       end do
-      !print *, (i,out_array(i),"\n",i=1,100)
-      !read(5,*)
    end subroutine
    !=============================
 
    !=============================
    !Gets the row a + 3*(alpha-1) + 12*x of the Dirac operator
-   subroutine make_dirac_vector(a,alpha,x)
-      integer, value :: a, alpha, x
-      integer :: i,y,mu,beta,b
+   subroutine init_prop(a,alpha, v)
+      integer, intent(in) :: a, alpha
+      complex(dp), intent(out) :: v(:)
+      integer :: i,x,y,z,t,b,beta
 
-      do y=0,array_dim/12 - 1
-         do mu=1,8
-            do i=1,12
-               beta = (i-1)/3
-               b = i - beta*3
-      
-               dirac_vector(b+3*beta + 12*y) = cmplx(0.0_dp,0.0_dp)
-               if (x .eq. increment_table(y,mu)) then
-                  dirac_vector(b+3*beta + 12*y) = dirac_vector(b+3*beta + 12*y) + gamma_mu_star(alpha,beta+1,mu)*U(mu,x)%a(a,b)
-               end if
-
-               if ( (y .eq. x) .and. (a .eq. b) .and. (alpha .eq. beta+1) ) then
-                  dirac_vector(b+3*beta + 12*y) = dirac_vector(b+3*beta + 12*y) +  cmplx(4.0_dp + mass,0.0_dp)
-               end if
-            end do
-         end do
+      do i=1,array_dim
+         t=i/(12*nx*ny*nz)
+         z = (i - t*12*nx*ny*nz)/(12*nx*ny)
+         y = (i - t*12*nx*ny*nz - z*12*nx*ny)/(12*nx)
+         x = (i - t*12*nx*ny*nz - z*12*nx*ny - y*12*nx)/12
+         beta = (i - t*12*nx*ny*nz - z*12*nx*ny - y*12*nx - x*12)/3
+         b = i - t*12*nx*ny*nz - z*12*nx*ny - y*12*nx - x*12 - 3*beta
+         b = b + 1
+         beta=beta+1
+         if ((b .eq. a) .and. (beta .eq. alpha)) then
+            v(i) = cmplx(mass+2.0_dp,0.0_dp)/(sin(real(x)) **2 + sin(real(y))**2 + sin(real(z))**2 + sin(real(t))**2 + mass + cmplx(2.0_dp))
+         else
+            v(i) = cmplx(0.0_dp,0.0_dp)
+         end if
       end do
    end subroutine
    !=============================
