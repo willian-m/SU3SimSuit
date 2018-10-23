@@ -8,7 +8,6 @@ module fermion_prop
    
    integer :: i_one,array_dim
    complex(dp),dimension(4,4,8) :: gamma_mu,gamma_mu_star !GPU variables to store dirac matrices
-   complex(dp), allocatable :: dirac_vector(:)
    complex(dp) :: mass
    
    
@@ -20,7 +19,7 @@ module fermion_prop
    !=============================
    !Compute the propagator using the BI-CGStab algorithm
    subroutine compute_prop(prop)
-      integer, parameter :: max_step = 5
+      integer, parameter :: max_step = 100
       complex(dp), intent(out) :: prop(:,:)
       complex(dp), allocatable :: source(:,:)
       type(cublasHandle) :: handle
@@ -43,7 +42,6 @@ module fermion_prop
       allocate(source(0:array_dim - 1,12))
       allocate(r(array_dim),r_tilde(array_dim),p(array_dim),v(array_dim))
       allocate(t(array_dim))
-      allocate(dirac_vector(array_dim))
       
       !Load memory
       
@@ -55,15 +53,11 @@ module fermion_prop
       call set_source_point_source(source)
       !call set_source_checkboard(source)
       
-      !istat = cublasCreate(handle)
-      !istat = cudaDeviceSynchronize() !source must be set before proceeding
-      
       !For each spin-color index
       do alpha=1,4
          do a=1,3
             spin_color_index = a + 3*(alpha-1)
             call init_prop(a, alpha, prop(:,spin_color_index))
-            !call zcopy(array_dim,source(:,spin_color_index),i_one,prop(:,spin_color_index),i_one)
             
             !Initialization
             call dirac_vector_multiply(prop(:,spin_color_index),r)
@@ -71,8 +65,6 @@ module fermion_prop
             call zscal(array_dim,z_minus_one,r,i_one) !scales a vector by a constant
             call zcopy(array_dim,r,i_one,r_tilde,i_one)
             
-            !print *, r_tilde(1:100)
-            !write(5,*)
             stop_condition = .false.
             step = 1
             do 
@@ -129,9 +121,7 @@ module fermion_prop
 
       print *, "Finished. Copying result to output vector"
 
-      !Deallocate resources
-      !istat = cublasDestroy(handle)
-      deallocate(source,U,r,r_tilde,p,v,t,dirac_vector)
+      deallocate(source,U,r,r_tilde,p,v,t)
       
 
    end subroutine
@@ -147,46 +137,41 @@ module fermion_prop
       
       out_array = cmplx(0.0_dp,0.0_dp)
       
+      !$acc parallel copyin(gamma_mu_star(1:4,1:4,1:8), U(8,0:array_dim/12-1),in_array(1:array_dim),i,x,alpha,a) copyout(out_array(1:array_dim))
+      !$acc loop
       do x=0,array_dim/12-1
-        do alpha=1,4 
+         !$acc loop
+         do alpha=1,4 
+            !$acc loop
             do a=1,3
                i = a + 3*(alpha-1) + 12*x
-
+               
                !We build the i-th line of the dirac matrix
-               !$acc parallel copyin(gamma_mu_star(1:4,1:4,1:8), U(8,0:array_dim/12-1),in_array(1:array_dim),i) copyout(out_array(1:array_dim)) private(reduce_var)
                reduce_var = cmplx(0.0_dp,0.0_dp)
-               !$acc loop
-               do y=0,array_dim/12-1
-                  !$acc loop
-                  do beta=1,4
-                     !$acc loop reduction(-:reduce_var) private(j)
-                     do b=1,3 
+               !$acc loop reduction(+:reduce_var) private(j,y)
+               do beta=1,4
+                  !$acc loop 
+                  do b=1,3 
+                     !Gauge dependent term
+                     do mu=1,8
+                        y = x + increment_table(x,mu)
                         j = b + 3*(beta-1) + 12*y
-
-                        !Gauge dependent term
-                        
-                        do mu=1,8
-                           if (y .eq. x+increment_table(x,mu)) then
-                              reduce_var = reduce_var + cmplx(-0.5_dp,0.0_dp)*gamma_mu_star(alpha,beta,mu)*U(mu,y)%a(a,b)*in_array(j)
-                              !out_array(i) = out_array(i) - cmplx(0.5_dp,0.0_dp)*gamma_mu_star(alpha,beta,mu)*U(mu,y)%a(a,b)*in_array(j)
-                           end if
-                        end do
-
-                        !Mass term
-                        if ( (y .eq. x) .and. (a .eq. b) .and. (alpha .eq. beta) ) then
-                           reduce_var = reduce_var + (mass + cmplx(4.0_dp,0.0_dp))*in_array(j)
-                           !out_array(i) = out_array(i) + (mass + cmplx(4.0_dp,0.0_dp))*in_array(j)
-                        end if
+                        reduce_var = reduce_var + cmplx(-0.5_dp,0.0_dp)*gamma_mu_star(alpha,beta,mu)*U(mu,y)%a(a,b)*in_array(j)
+                        !out_array(i) = out_array(i) - cmplx(0.5_dp,0.0_dp)*gamma_mu_star(alpha,beta,mu)*U(mu,y)%a(a,b)*in_array(j)
                      end do
-
                   end do
                end do
+
+               !Mass term uses only diagonals, i.e. a = b, beta = alpha and y = x
+               j = a + 3*(alpha-1) + 12*x
+               reduce_var = reduce_var + (mass + cmplx(4.0_dp,0.0_dp))*in_array(j)
+               !out_array(i) = out_array(i) + (mass + cmplx(4.0_dp,0.0_dp))*in_array(j)
+            
                out_array(i) = reduce_var
-               !$acc end parallel
-               print *, out_array(1:50)
             end do
          end do
       end do
+      !$acc end parallel
    end subroutine
    !=============================
 
