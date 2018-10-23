@@ -158,6 +158,7 @@ end subroutine Fmunu
 !==============================
 !Compute tensor Tmunu
 subroutine Tmunu(x, T)
+    use ieee_arithmetic
     complex(dp), intent(out) :: T(4,4)
     integer, intent(in) :: x
     type(SU3) :: F(4,4), aux
@@ -181,7 +182,7 @@ subroutine Tmunu(x, T)
                 if (mu .ne. sigma .and. nu .ne. sigma) then !We skip diagonals terms of F_{mu nu}, since it is zero
                     call SU3mult(F(mu,sigma),F(nu,sigma),aux)
                     T(nu,mu) = T(nu,mu) + 2.0_dp*SU3_Tr(aux)
-                    if(isnan(real(T(nu,mu))) .or. isnan(imag(T(nu,mu))) )then
+                    if(ieee_is_nan(real(T(nu,mu))) .or. ieee_is_nan(imag(T(nu,mu))) )then
                         print *, T(nu,mu)
                     end if
                 end if
