@@ -32,3 +32,9 @@ src/lib/*
 
 #I use vscode, which creates a .vscode with editor configs. No need to sync it.
 .vscode/
+
+#Ignore CMAKE generated files
+CMakeCache.txt
+*.cmake
+CMakeFiles
+Makefile
