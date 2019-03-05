@@ -23,6 +23,7 @@ implicit none
 
 !==============================
 !List of public variables
+integer :: accepted,total !Used to keep track of the ratio of the accepted/rejected ratio
 
 !List private variables
 type(SU3) :: staple !Staple of the links to be updated
@@ -30,7 +31,7 @@ type(SU3) :: W !Mean field variable
 !==============================
 
 private
-public heat_bath_method
+public heat_bath_method,accepted,total
 
 contains
 
@@ -58,11 +59,6 @@ real(dp) :: det
 
 !1) Compute Staple
 call compute_staple(d,y,staple)
-
-!1a) Remove from the action the action the contribution
-!of the link being updated
-call SU3mult(U(d,y),staple,W)
-S = S - beta*(1.0_dp - SU3_ReTr(W)/3.0_dp)
 
 !For each one the 3 SU(2) subgroups of SU(3)
 do a=1,2
@@ -109,10 +105,6 @@ end do
 !As a final step, we perform one overrelax hit
 call overrelax(U(d,y))
 call SU3_dagger(U(d,y),U(d-1,y+increment_table(y,d)))
-
-!Update the action
-call SU3mult(U(d,y),staple,W)
-S = S + beta*(1.0_dp - SU3_ReTr(W)/3.0_dp)
 
 end subroutine heat_bath_hit
 !==============================
@@ -204,6 +196,7 @@ type(SU3) :: g0, inverse, aux1, Vnew
 integer :: i,j
 real(dp) :: deltaS,r
 
+total=total+1
 aux1 = staple
 !1) Projects staple into SU3
 call SU3projector(aux1)
@@ -230,6 +223,7 @@ deltaS= beta*SU3_ReTr(g0)/3.0_dp
 call random_number(r)
 if (r .le. exp(-deltaS) ) then
    V = Vnew
+   accepted=accepted+1
    call SU3projector(V)
 end if
 

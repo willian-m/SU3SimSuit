@@ -32,3 +32,6 @@ src/lib/*
 
 #I use vscode, which creates a .vscode with editor configs. No need to sync it.
 .vscode/
+
+#Ignore binary folder
+bin/*
