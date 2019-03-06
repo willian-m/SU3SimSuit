@@ -242,7 +242,7 @@ module statistic
     real(dp), intent(out) :: avrg,estimate_error,tau_int
     complex(dp), allocatable :: out_DFT(:)
     real(dp), allocatable :: corr(:)
-    integer :: n,i,stat,tau_exp,bin_size
+    integer :: n,i,stat,tau_exp,bin_size,window_parameter,m
     real(dp) :: sigma2_naive
     real(dp), parameter :: one_over_e = exp(-1.0_dp)
     type(DFTI_DESCRIPTOR), pointer :: descHandler
@@ -271,7 +271,7 @@ module statistic
     !We need to create a DESCRIPTOR to describe the parameters of the transform
     stat = DftiCreateDescriptor( descHandler, DFTI_DOUBLE, DFTI_REAL, 1, n )
     stat = DftiSetValue( descHandler, DFTI_FORWARD_SCALE, 1.0_dp)
-    stat = DftiSetValue( descHandler, DFTI_BACKWARD_SCALE, 1.0_dp/n**2)
+    stat = DftiSetValue( descHandler, DFTI_BACKWARD_SCALE, 1.0_dp/n)
     !We do not desire to overwrite the input data
     stat = DftiSetValue( descHandler, DFTI_PLACEMENT, DFTI_NOT_INPLACE)
     !Set up the layout of the output
@@ -293,39 +293,32 @@ module statistic
 
     !Finishes computing the connected correlation, by subtracting the average 
     do i=1,n
-        corr(i) = corr(i) - avrg**2
+        corr(i) = corr(i)/n - avrg**2
     end do
     
 
     !Naive error
-    sigma2_naive = corr(1)/N
+    sigma2_naive = corr(1)/n
 
-    !print *, "Estimating exponential correlation time"
-    !Estimate the exponential correlation time:
-    i=2
-    do while(corr(i-1)/corr(1) .gt. one_over_e)
-        i=i+1
+    !Uses Sokal's auto-windowing method to compute 
+    !integrated correlation time 
+
+    !1) Normalizes correlation function
+    corr = corr/corr(1)
+
+    !2) Initilizes correlation time and window parameter
+    window_parameter = 1
+    tau_int = 1
+
+    !3) Sum all terms smaller or equal to m while m < 6 tau_int
+    do while ( (m .le. 6*tau_int) .and. (m .le. n) )
+        tau_int=0
+        do i=1,m
+            tau_int=tau_int+corr(i)
+        end do
+        m=m+1
     end do
-    tau_exp = i-1
     
-    !tau_int ~ 2*tau_exp.
-    !This is used to bin the data, such as the bins are approximatelly uncorrelated
-    bin_size = 2*tau_exp
-
-
-    !If the above bin size does not divides the data evenly, we increase it, until we find
-    !a suitable bin  
-    do while( mod(n,bin_size) .ne. 0)
-        bin_size = bin_size+1
-    end do
-
-   
-    !Computes the integrated correlation time using binning methods
-    !Check Bernd Berg book for details
-    tau_int = corr_time_int(input_data(1:n),bin_size)
-
-    !Once we have the correlation time, we estimate the error by being
-    !For now, tau_int is broken. Lets use the naive estimate
     estimate_error = sqrt(sigma2_naive*tau_int)
 
     !Clean up

@@ -47,32 +47,30 @@ do file_num=1,number_of_files
     end do
     close(nw)
 
-    !Computes the correlation. Typically, it is displayed as a function of time only.
-    !Thus, we average over space.
+    !Computes the correlation. This is done by Fourier transforming the observables 
     call space_time_FFT(Tmunu(nu,mu,:),Tmunu_FFT)
     call space_time_FFT(Tmunu(sigma,rho,:),Trhosigma_FFT)
 
-    !Compute the FFT of the correlation function
+    !And then, the correlation in Fourier space is given by A(k)B(-k)/N. Fou
     do omega=0,nt-1
         do kz=0,nz-1
             do ky=0,ny-1
                 do kx=0,nx-1
                     k1 = kx + ky*nx + kz*nx*ny + omega*nx*ny*nz
-                    k2 = mod(nx-kx,nx) + mod(ny-ky,ny)*nx + mod(nz-kz,nz)*nx*ny + mod(nt-omega,nt)*nx*ny*nz
+                    k2 = mod(nx-kx,nx) + mod(ny-ky,ny)*nx + mod(nz-kz,nz)*nx*ny + mod(nt-omega,nt)*nx*ny*nz !k2=-k1
                     observable(k1,file_num)=Tmunu_FFT(k1)*Trhosigma_FFT(k2)
                 end do
             end do
         end do
     end do
 
-!    print *, "Observable for ",trim(filename)," completed."
 end do
 close(unit_list_files)
 
 !Normalizes data
 observable = observable/real(nx*ny*nz*nt)
 
-!Now starts the analysis.
+!Performs the statistical analysis.
 do k1=0,nx*ny*nz*nt-1
     call full_analysis_real(observable(k1,:),avrg(k1),estimated_error(k1),integrated_corr_time(k1))
 end do
@@ -116,8 +114,8 @@ contains
    
         !We need to create a DESCRIPTOR to describe the parameters of the transform
         stat = DftiCreateDescriptor( descHandler, DFTI_DOUBLE, DFTI_COMPLEX, 4, [nx, ny, nz, nt] ) 
-        stat = DftiSetValue( descHandler, DFTI_FORWARD_SCALE, 1.0_dp)
-        stat = DftiSetValue( descHandler, DFTI_BACKWARD_SCALE, 1.0_dp/(nx*ny*nz*nt)**2)
+        stat = DftiSetValue( descHandler, DFTI_FORWARD_SCALE, 1.0_dp) !The square is to avoid the need to divide by this factor again later
+        stat = DftiSetValue( descHandler, DFTI_BACKWARD_SCALE, 1.0_dp/(nx*ny*nz*nt))
         !We do not desire to overwrite the input data
         stat = DftiSetValue( descHandler, DFTI_PLACEMENT, DFTI_NOT_INPLACE)
         !Set up the layout of the output
