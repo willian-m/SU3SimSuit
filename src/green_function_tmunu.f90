@@ -64,6 +64,7 @@ do file_num=1,number_of_files
         end do
     end do
 
+    print *, file_num," out of ",number_of_files," completed." 
 end do
 close(unit_list_files)
 
