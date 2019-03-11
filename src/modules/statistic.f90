@@ -242,7 +242,7 @@ module statistic
     real(dp), intent(out) :: avrg,estimate_error,tau_int
     complex(dp), allocatable :: out_DFT(:)
     real(dp), allocatable :: corr(:)
-    integer :: n,i,stat,tau_exp,bin_size,window_parameter,m
+    integer :: n,i,stat,tau_exp,bin_size,window_parameter
     real(dp) :: sigma2_naive
     real(dp), parameter :: one_over_e = exp(-1.0_dp)
     type(DFTI_DESCRIPTOR), pointer :: descHandler
@@ -311,12 +311,12 @@ module statistic
     tau_int = 1
 
     !3) Sum all terms smaller or equal to m while m < 6 tau_int
-    do while ( (m .le. 6*tau_int) .and. (m .le. n) )
+    do while ( (window_parameter .le. 6*tau_int) .and. (window_parameter .le. n) )
         tau_int=0
-        do i=1,m
+        do i=1,window_parameter
             tau_int=tau_int+corr(i)
         end do
-        m=m+1
+        window_parameter=window_parameter+1
     end do
     
     estimate_error = sqrt(sigma2_naive*tau_int)
