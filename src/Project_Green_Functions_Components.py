@@ -204,7 +204,7 @@ fig.suptitle(r"$G^\parallel(|\vec{k}|) - G^\bot(|\vec{k}|)$ - $k^2$ averaged")
 ax = fig.add_subplot(1,1,1)
 ax.set_xscale('log')
 plt.xlabel(r'$a^2 k^2$')
-plt.ylabel(r"$a^8 G(0,k^2)$")
+plt.ylabel(r"$a^8 G(0,k^2$")
 
 plt.errorbar([point[0] for point in difference[:]],[point[1] for point in difference[:]],[point[2] for point in difference[:]],None,'bo',ms=3)
 plt.legend()
@@ -213,3 +213,37 @@ plt.show()
 #   a) Select all points with the same p^2
 #   b) Fit the values to F(p^[4]) = a + b*p^[4]
 #   c) The value for that p^2 is the value of a
+
+#Save data to file (suitable to plot with pgfplots)
+
+out_file=open('output/p2_avrgd_GT.txt','w')
+for i in range(len(p2_avrgd_GT)):
+    out_file.write(str(p2_avrgd_GT[i][0])+'\t'+str(p2_avrgd_GT[i][1])+'\t'+str(p2_avrgd_error_GT[i][1])+'\n')
+
+out_file.close()
+    
+out_file=open('output/p2_avrgd_GL.txt','w')
+for i in range(len(p2_avrgd_GL)):
+    out_file.write(str(p2_avrgd_GL[i][0])+'\t'+str(p2_avrgd_GL[i][1])+'\t'+str(p2_avrgd_error_GL[i][1])+'\n')
+
+out_file.close()
+
+
+out_file=open('output/orb_avrgd_GT.txt','w')
+for i in range(len(orb_avrgd_GT)):
+    out_file.write(str(orb_avrgd_GT[i][0])+'\t'+str(orb_avrgd_GT[i][3])+'\t'+str(orb_avrgd_error_GT[i][3])+'\n')
+
+out_file.close()
+    
+out_file=open('output/orb_avrgd_GL.txt','w')
+for i in range(len(orb_avrgd_GL)):
+    out_file.write(str(orb_avrgd_GL[i][0])+'\t'+str(orb_avrgd_GL[i][3])+'\t'+str(orb_avrgd_error_GL[i][3])+'\n')
+
+out_file.close()
+
+
+out_file=open('output/difference.txt'  ,'w')
+for point in difference:
+    out_file.write(str(point[0])+'\t'+str(point[1])+'\t'+str(point[2])+'\n')
+
+out_file.close()
