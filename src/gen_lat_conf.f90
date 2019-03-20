@@ -26,7 +26,7 @@ program gen_lat_conf
 use types_params
 use ziggurat, only : zigset
 use lattice, only : hot_start,lattice_file,init_lattice
-use heat_bath, only : heat_bath_method
+use heat_bath, only : heat_bath_method,accepted,total
 use IO, only : write_lattice
 use xml_parser, only : read_xml, nmc, therm, rec_step
 use objects, only : S, wilson_action
@@ -58,17 +58,23 @@ call init_random_seed !Set seed for fortran random number generator
 
 !Initialize the lattice according to user request
 call init_lattice(lattice_file)
-S=wilson_action()
-print *,0,",", S
+!S=wilson_action()
+print *,0!,",", S
 call write_lattice(0)
+
+!Start counting the efficiency of Metropolis algorithm in the overrelaxation method
+accepted=0
+total=0
 do n=1,nmc
    call heat_bath_method
    if (mod(n,rec_step) .eq. 0 .and. n .gt. therm) then
-     print *, n,",",S
      call write_lattice(n)
    end if
+   print *, n
 end do
 
+print *, "Finished. Overrelaxation method accepted ",dble(accepted)*100/dble(total),"percent."
+print *, "My work is finished. You may want to run the avrg_plaquette or the tmunu script now."
 !==================================================================================
 contains !REMEMBER: Make sure var names declared on the functions and 
          !subroutines are local, even if they match the name of var of

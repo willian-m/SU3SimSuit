@@ -13,10 +13,14 @@ set(CMAKE_Fortran_COMPILER pgfortran)
 #===================================================#
 set(MODULES_DIR ${CMAKE_SOURCE_DIR}/modules)
 set(FOX_PATH ${CMAKE_SOURCE_DIR}/lib/FoX)
+set(MKLROOT /opt/intel/compilers_and_libraries_2019.2.187/linux/mkl)
+
 find_library(FOXUTILS FoX_utils ${FOX_PATH}/objs/lib)
 find_library(FOXCOMMON FoX_common ${FOX_PATH}/objs/lib)
 find_library(FOXFSYS FoX_fsys ${FOX_PATH}/objs/lib)
 find_library(FOXSAX FoX_sax ${FOX_PATH}/objs/lib)
+
+link_directories(${MKLROOT}/lib/intel64)
 
 MESSAGE(${FOX_PATH})
 MESSAGE(${CMAKE_LIBRARY_PATH_FLAG})
@@ -36,7 +40,7 @@ set(GREEN_FUNCTION_TMUNU_DEPENDENCY ${MODULES_DIR}/statistic.f90 ${MODULES_DIR}/
 add_executable(gen_lat_conf.run gen_lat_conf.f90 ${GEN_LAT_CONF_DEPENDENCY})
 add_executable(avrg_plaquette.run avrg_plaquette.f90 ${AVRG_PLAQUETTE_DEPENDENCY})
 add_executable(tmunu.run tmunu.f90 ${TMUNU_DEPENDENCY})
-#add_executable(green_function_tmunu.run green_function_tmunu.f90 ${GREEN_FUNCTION_TMUNU_DEPENDENCY}) #TO-DO: Link against MKL
+add_executable(green_function_tmunu.run green_function_tmunu.f90 ${GREEN_FUNCTION_TMUNU_DEPENDENCY})
 
 
 #==========================#
@@ -45,10 +49,15 @@ add_executable(tmunu.run tmunu.f90 ${TMUNU_DEPENDENCY})
 SET_SOURCE_FILES_PROPERTIES(${MODULES_DIR}/xml_parser.f90 PROPERTIES COMPILE_FLAGS -I${FOX_PATH}/objs/finclude)
 SET_SOURCE_FILES_PROPERTIES(gen_lat_conf.f90 PROPERTIES COMPILE_FLAGS -I${FOX_PATH}/objs/finclude)
 SET_SOURCE_FILES_PROPERTIES(avrg_plaquette.f90 PROPERTIES COMPILE_FLAGS -I${FOX_PATH}/objs/finclude)
+SET_SOURCE_FILES_PROPERTIES(${MODULES_DIR}/statistic.f90  PROPERTIES COMPILE_FLAGS -i8)
+SET_SOURCE_FILES_PROPERTIES(${MODULES_DIR}/statistic.f90  APPEND_STRING PROPERTIES COMPILE_FLAGS -I${MKLROOT}/include)
+SET_SOURCE_FILES_PROPERTIES(green_function_tmunu.f90 PROPERTIES COMPILE_FLAGS -I${MKLROOT}/include)
+SET_SOURCE_FILES_PROPERTIES(green_function_tmunu.f90 APPEND_STRING PROPERTIES COMPILE_FLAGS -I${FOX_PATH}/objs/finclude)
 
 target_link_libraries(gen_lat_conf.run ${FOXSAX} ${FOXFSYS} ${FOXCOMMON} ${FOXUTILS})
 target_link_libraries(avrg_plaquette.run ${FOXSAX} ${FOXFSYS} ${FOXCOMMON} ${FOXUTILS})
 target_link_libraries(tmunu.run ${FOXSAX} ${FOXFSYS} ${FOXCOMMON} ${FOXUTILS})
+target_link_libraries(green_function_tmunu.run ${FOXSAX} ${FOXFSYS} ${FOXCOMMON} ${FOXUTILS} mkl_rt pthread m dl)
 
 #======================================================#
 #Unused flags commented out and kept here for reference#
