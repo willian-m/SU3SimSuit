@@ -1,5 +1,4 @@
 #!/bin/bash
-LC_NUMERIC=en_US.utf-8 #Needed to avoid user locale using a comma as decimal separator
 
 #This script assumes it is being run from inside the project root directory
 DIR=`pwd`
@@ -14,7 +13,7 @@ STEP=$6
 
 Nsf=`printf '%03d' $Ns`
 Ntf=`printf '%03d' $Nt`
-BETAf=`printf '%.2f' $BETA`
+BETAf=`LC_NUMERIC=C printf '%.2f' $BETA`
 filePath=$DIR/output/lat_conf/links"$Nsf""$Nsf""$Nsf""$Ntf"beta"$BETAf"Sweep
 
 #--------------------------------------------
